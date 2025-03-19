@@ -1,4 +1,5 @@
-import React from "react";
+/* eslint-disable react/jsx-key */
+/* eslint-disable react/prop-types */
 import Img1 from "../../assets/shirt/shirt.png";
 import Img2 from "../../assets/shirt/shirt2.png";
 import Img3 from "../../assets/shirt/shirt3.png";
@@ -31,7 +32,6 @@ const TopProducts = ({ handleOrderPopup }) => {
   return (
     <div>
       <div className="container">
-        {/* Header section */}
         <div className="text-left mb-24">
           <p data-aos="fade-up" className="text-sm text-primary">
             Top Rated Products for you
@@ -44,7 +44,6 @@ const TopProducts = ({ handleOrderPopup }) => {
             asperiores modi Sit asperiores modi
           </p>
         </div>
-        {/* Body section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-20 md:gap-5 place-items-center">
           {ProductsData.map((data) => (
             <div
