@@ -1,29 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import Hero from "./components/Hero/Hero";
-import Products from "./components/Products/Products";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import TopProducts from "./components/TopProducts/TopProducts";
 import Banner from "./components/Banner/Banner";
 import Subscribe from "./components/Subscribe/Subscribe";
-import Testimonials from "./components/Testimonials/Testimonials";
 import Footer from "./components/Footer/Footer";
-import CartPopup from "./components/CartPopup/CartPopup";
-import WishlistPopup from "./components/WishlistPopup/WishlistPopup";
-import ProductDetails from "./components/ProductDetails/ProductDetails";
-import Checkout from "./components/Checkout/Checkout";
-import OrderComplete from "./components/OrderComplete/OrderComplete";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaShoppingCart, FaHeart } from "react-icons/fa";
-import SearchPage from "./components/SearchPage/SearchPage";
-
-// مكونات جديدة
 import Categories from "./components/Categories/Categories";
-import RecentlyViewed from "./components/RecentlyViewed/RecentlyViewed";
-import Shop from "./components/Shop/Shop";
+
+// Lazy-load components
+const Products = lazy(() => import("./components/Products/Products"));
+const TopProducts = lazy(() => import("./components/TopProducts/TopProducts"));
+const Testimonials = lazy(() => import("./components/Testimonials/Testimonials"));
+const RecentlyViewed = lazy(() => import("./components/RecentlyViewed/RecentlyViewed"));
+const CartPopup = lazy(() => import("./components/CartPopup/CartPopup"));
+const WishlistPopup = lazy(() => import("./components/WishlistPopup/WishlistPopup"));
+const ProductDetails = lazy(() => import("./components/ProductDetails/ProductDetails"));
+const Checkout = lazy(() => import("./components/Checkout/Checkout"));
+const OrderComplete = lazy(() => import("./components/OrderComplete/OrderComplete"));
+const SearchPage = lazy(() => import("./components/SearchPage/SearchPage"));
+const Shop = lazy(() => import("./components/Shop/Shop"));
 
 const App = () => {
   const [cartPopup, setCartPopup] = useState(false);
@@ -68,35 +68,42 @@ const App = () => {
     <div className="overflow-hidden">
       <Hero setCartPopup={setCartPopup} />
       <Categories />
-     
-      <Products
-        cart={cart}
-        setCart={setCart}
-        wishlist={wishlist}
-        setWishlist={setWishlist}
-        cartPopup={cartPopup}
-        setCartPopup={setCartPopup}
-        setRecentlyViewed={setRecentlyViewed}
-      />
-      <TopProducts
-        setCartPopup={setCartPopup}
-        cart={cart}
-        setCart={setCart}
-        wishlist={wishlist}
-        setWishlist={setWishlist}
-        setRecentlyViewed={setRecentlyViewed}
-      />
+      <Suspense fallback={<div className="text-center py-10">Loading Products...</div>}>
+        <Products
+          cart={cart}
+          setCart={setCart}
+          wishlist={wishlist}
+          setWishlist={setWishlist}
+          cartPopup={cartPopup}
+          setCartPopup={setCartPopup}
+          setRecentlyViewed={setRecentlyViewed}
+        />
+      </Suspense>
+      <Suspense fallback={<div className="text-center py-10">Loading Top Products...</div>}>
+        <TopProducts
+          setCartPopup={setCartPopup}
+          cart={cart}
+          setCart={setCart}
+          wishlist={wishlist}
+          setWishlist={setWishlist}
+          setRecentlyViewed={setRecentlyViewed}
+        />
+      </Suspense>
       <Banner />
       <Subscribe />
-      <RecentlyViewed
-        recentlyViewed={recentlyViewed}
-        cart={cart}
-        setCart={setCart}
-        wishlist={wishlist}
-        setWishlist={setWishlist}
-        setCartPopup={setCartPopup}
-      />
-      <Testimonials />
+      <Suspense fallback={<div className="text-center py-10">Loading Recently Viewed...</div>}>
+        <RecentlyViewed
+          recentlyViewed={recentlyViewed}
+          cart={cart}
+          setCart={setCart}
+          wishlist={wishlist}
+          setWishlist={setWishlist}
+          setCartPopup={setCartPopup}
+        />
+      </Suspense>
+      <Suspense fallback={<div className="text-center py-10">Loading Testimonials...</div>}>
+        <Testimonials />
+      </Suspense>
     </div>
   );
 
@@ -145,45 +152,62 @@ const App = () => {
           <Route
             path="/shop"
             element={
-              <Shop
-                cart={cart}
-                setCart={setCart}
-                wishlist={wishlist}
-                setWishlist={setWishlist}
-                setCartPopup={setCartPopup}
-                setRecentlyViewed={setRecentlyViewed}
-              />
+              <Suspense fallback={<div className="text-center py-10">Loading Shop...</div>}>
+                <Shop
+                  cart={cart}
+                  setCart={setCart}
+                  wishlist={wishlist}
+                  setWishlist={setWishlist}
+                  setCartPopup={setCartPopup}
+                  setRecentlyViewed={setRecentlyViewed}
+                />
+              </Suspense>
             }
           />
           <Route
             path="/product/:id"
             element={
-              <ProductDetails
-                cart={cart}
-                setCart={setCart}
-                wishlist={wishlist}
-                setWishlist={setWishlist}
-                cartPopup={cartPopup}
-                setCartPopup={setCartPopup}
-                setRecentlyViewed={setRecentlyViewed}
-              />
+              <Suspense fallback={<div className="text-center py-10">Loading Product Details...</div>}>
+                <ProductDetails
+                  cart={cart}
+                  setCart={setCart}
+                  wishlist={wishlist}
+                  setWishlist={setWishlist}
+                  cartPopup={cartPopup}
+                  setCartPopup={setCartPopup}
+                  setRecentlyViewed={setRecentlyViewed}
+                />
+              </Suspense>
             }
           />
           <Route
             path="/checkout"
-            element={<Checkout cart={cart} setCart={setCart} />}
+            element={
+              <Suspense fallback={<div className="text-center py-10">Loading Checkout...</div>}>
+                <Checkout cart={cart} setCart={setCart} />
+              </Suspense>
+            }
           />
-          <Route path="/order-complete" element={<OrderComplete />} />
+          <Route
+            path="/order-complete"
+            element={
+              <Suspense fallback={<div className="text-center py-10">Loading Order Complete...</div>}>
+                <OrderComplete />
+              </Suspense>
+            }
+          />
           <Route
             path="/search"
             element={
-              <SearchPage
-                cart={cart}
-                setCart={setCart}
-                wishlist={wishlist}
-                setWishlist={setWishlist}
-                setRecentlyViewed={setRecentlyViewed}
-              />
+              <Suspense fallback={<div className="text-center py-10">Loading Search...</div>}>
+                <SearchPage
+                  cart={cart}
+                  setCart={setCart}
+                  wishlist={wishlist}
+                  setWishlist={setWishlist}
+                  setRecentlyViewed={setRecentlyViewed}
+                />
+              </Suspense>
             }
           />
         </Routes>
@@ -192,25 +216,29 @@ const App = () => {
         <Footer />
 
         {/* Cart Popup (Sidebar) */}
-        <CartPopup
-          cartPopup={cartPopup}
-          setCartPopup={setCartPopup}
-          cart={cart}
-          setCart={setCart}
-          setWishlistPopup={setWishlistPopup}
-          wishlist={wishlist}
-          setWishlist={setWishlist}
-        />
+        <Suspense fallback={null}>
+          <CartPopup
+            cartPopup={cartPopup}
+            setCartPopup={setCartPopup}
+            cart={cart}
+            setCart={setCart}
+            setWishlistPopup={setWishlistPopup}
+            wishlist={wishlist}
+            setWishlist={setWishlist}
+          />
+        </Suspense>
 
         {/* Wishlist Popup (Sidebar) */}
-        <WishlistPopup
-          wishlistPopup={wishlistPopup}
-          setWishlistPopup={setWishlistPopup}
-          cart={cart}
-          setCart={setCart}
-          wishlist={wishlist}
-          setWishlist={setWishlist}
-        />
+        <Suspense fallback={null}>
+          <WishlistPopup
+            wishlistPopup={wishlistPopup}
+            setWishlistPopup={setWishlistPopup}
+            cart={cart}
+            setCart={setCart}
+            wishlist={wishlist}
+            setWishlist={setWishlist}
+          />
+        </Suspense>
 
         {/* Toast Container */}
         <ToastContainer

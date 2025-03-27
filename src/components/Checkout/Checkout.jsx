@@ -1,9 +1,11 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/jsx-no-undef */
 import { useState, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner ,FaTrash } from 'react-icons/fa';
 
 // Constants
 const COUPON_CODES = {
@@ -193,7 +195,7 @@ const Checkout = ({ cart, setCart }) => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 mt-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md order-first lg:order-last lg:sticky lg:top-6">
+          <div className="bg-white dark:bg-gray-800 max-h-max p-6 rounded-lg shadow-md order-first lg:order-last lg:sticky lg:top-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Your Order</h2>
             <div className="border-b border-gray-200 dark:border-gray-600 pb-4 mb-4">
               <div className="flex justify-between font-semibold text-base text-gray-900 dark:text-gray-100">
@@ -204,24 +206,21 @@ const Checkout = ({ cart, setCart }) => {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Your cart is empty.</p>
               ) : (
                 cart.map((item, index) => (
-                  <div key={item.id || index} className="flex justify-between mt-4 text-sm">
+                  <div key={item.id || index} className="flex justify-between gap-4 mt-4 text-sm">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium"
-                      >
-                        X
-                      </button>
+                   
                       <img
                         src={item.img || 'https://via.placeholder.com/48'}
                         alt={item.title || 'Product Image'}
                         className="w-12 h-12 object-cover rounded-md"
                         onError={(e) => (e.target.src = 'https://via.placeholder.com/48')}
                       />
-                      <div className="flex flex-col">
-                        <span className="text-gray-800 dark:text-gray-200 font-medium">
-                          {item.title || 'Unknown Product'}
-                        </span>
+                      <div className="flex flex-col ">
+                      <span className="text-gray-800 dark:text-gray-200 font-medium">
+  {(item.title || 'Unknown Product').length > 20
+    ? `${(item.title || 'Unknown Product').substring(0, 25)}…`
+    : item.title || 'Unknown Product'}
+</span>
                         <div className="flex items-center space-x-2 mt-1">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -233,10 +232,17 @@ const Checkout = ({ cart, setCart }) => {
                           <span className="text-gray-800 dark:text-gray-200">{item.quantity || 1}</span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="border  border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             +
                           </button>
+                          <button
+  onClick={() => removeFromCart(item.id)}
+  className="text-gray-500  dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
+  aria-label={`Remove ${item.title || 'product'} from cart`}
+>
+  <FaTrash className="w-4 h-4" />
+</button>
                         </div>
                       </div>
                     </div>
