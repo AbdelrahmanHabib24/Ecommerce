@@ -5,6 +5,11 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { FaSpinner } from 'react-icons/fa';
 
+// Constants
+const COUPON_CODES = {
+  DISCOUNT10: 0.1, // 10% discount
+};
+
 const Checkout = ({ cart, setCart }) => {
   const navigate = useNavigate();
   const [billingDetails, setBillingDetails] = useState({
@@ -20,7 +25,6 @@ const Checkout = ({ cart, setCart }) => {
     phone: '',
     email: '',
     orderNotes: '',
-    shippingMethod: 'standard',
   });
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -28,74 +32,77 @@ const Checkout = ({ cart, setCart }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCouponInput, setShowCouponInput] = useState(false);
 
-  const shippingFees = useMemo(() => ({
-    standard: 50,
-    express: 100,
-  }), []);
+  // Function to remove an item from the cart
+  const removeFromCart = (id) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  };
 
-  const shippingFee = shippingFees[billingDetails.shippingMethod];
+  // Function to update the quantity of an item
+  const updateQuantity = (id, newQuantity) => {
+    if (newQuantity < 1) return; // Prevent quantity from going below 1
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
 
-  const subtotal = useMemo(
-    () => cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
-    [cart]
-  );
+  // Detailed logging for debugging
+  console.log('Cart Data:', cart);
+  console.log('Cart Length:', cart.length);
+  console.log('Cart Items:', cart.map(item => ({
+    id: item.id,
+    title: item.title,
+    price: item.price,
+    quantity: item.quantity,
+    img: item.img,
+  })));
+
+  const subtotal = useMemo(() => cart.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 1), 0), [cart]);
   const discountAmount = useMemo(() => subtotal * discount, [subtotal, discount]);
-  const total = useMemo(() => subtotal - discountAmount + shippingFee, [subtotal, discountAmount, shippingFee]);
+  const total = useMemo(() => subtotal - discountAmount, [subtotal, discountAmount]); // Removed shippingFee
 
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setBillingDetails((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  const validateForm = useCallback(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^\+?\d{10,15}$/;
+  const validateField = (field, value, regex = null, required = true) => {
+    if (required && !value.trim()) return `${field} is required.`;
+    if (regex && !regex.test(value)) return `Please enter a valid ${field.toLowerCase()}.`;
+    return null;
+  };
 
-    if (!billingDetails.firstName.trim()) {
-      toast.error('First name is required.', { position: 'top-right' });
-      return false;
-    }
-    if (!billingDetails.lastName.trim()) {
-      toast.error('Last name is required.', { position: 'top-right' });
-      return false;
-    }
-    if (!billingDetails.address.trim()) {
-      toast.error('Street address is required.', { position: 'top-right' });
-      return false;
-    }
-    if (!billingDetails.townCity.trim()) {
-      toast.error('Town/City is required.', { position: 'top-right' });
-      return false;
-    }
-    if (!billingDetails.stateCounty) {
-      toast.error('State/County is required.', { position: 'top-right' });
-      return false;
-    }
-    if (!billingDetails.postcode.trim()) {
-      toast.error('Postcode/ZIP is required.', { position: 'top-right' });
-      return false;
-    }
-    if (!phoneRegex.test(billingDetails.phone)) {
-      toast.error('Please enter a valid phone number (10-15 digits).', { position: 'top-right' });
-      return false;
-    }
-    if (!emailRegex.test(billingDetails.email)) {
-      toast.error('Please enter a valid email address.', { position: 'top-right' });
+  const validateForm = useCallback(() => {
+    const validations = [
+      validateField('First name', billingDetails.firstName),
+      validateField('Last name', billingDetails.lastName),
+      validateField('Street address', billingDetails.address),
+      validateField('Town/City', billingDetails.townCity),
+      validateField('State/County', billingDetails.stateCounty),
+      validateField('Postcode/ZIP', billingDetails.postcode),
+      validateField('Phone', billingDetails.phone, /^\+?\d{10,15}$/),
+      validateField('Email', billingDetails.email, /^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+    ];
+
+    const errors = validations.filter(Boolean);
+    if (errors.length > 0) {
+      errors.forEach((error) => toast.error(error, { position: 'top-right' }));
       return false;
     }
     return true;
   }, [billingDetails]);
 
   const applyCoupon = useCallback(() => {
-    if (couponCode.trim() === 'DISCOUNT10') {
-      setDiscount(0.1);
-      setIsCouponApplied(true);
-      toast.success('Coupon applied successfully! You got 10% off.', { position: 'top-right' });
-    } else {
-      setDiscount(0);
-      setIsCouponApplied(false);
-      toast.error('Invalid coupon code.', { position: 'top-right' });
-    }
+    const discount = COUPON_CODES[couponCode.trim()] || 0;
+    setDiscount(discount);
+    setIsCouponApplied(discount > 0);
+    toast[discount > 0 ? 'success' : 'error'](
+      discount > 0
+        ? `Coupon applied successfully! You got ${discount * 100}% off.`
+        : 'Invalid coupon code.',
+      { position: 'top-right' }
+    );
   }, [couponCode]);
 
   const handleSubmit = useCallback(
@@ -107,22 +114,15 @@ const Checkout = ({ cart, setCart }) => {
         return;
       }
 
-      if (!validateForm()) {
-        return;
-      }
+      if (!validateForm()) return;
 
-      const confirmOrder = window.confirm(
-        'Are you sure you want to place this order? Please review your details before confirming.'
-      );
-      if (!confirmOrder) {
-        return;
-      }
+      const confirmOrder = window.confirm('Are you sure you want to place this order?');
+      if (!confirmOrder) return;
 
       setIsLoading(true);
 
       try {
         await new Promise((resolve) => setTimeout(resolve, 2000));
-
         const orderNumber = Math.floor(Math.random() * 10000) + 1000;
 
         navigate('/order-complete', {
@@ -136,13 +136,11 @@ const Checkout = ({ cart, setCart }) => {
         });
 
         setCart([]);
-        toast.success('Order placed successfully! You will receive a confirmation email soon.', {
+        toast.success('Order placed successfully! Check your email for confirmation.', {
           position: 'top-right',
         });
       } catch (error) {
-        toast.error('An error occurred while placing your order. Please try again.', {
-          position: 'top-right',
-        });
+        toast.error('An error occurred. Please try again.', { position: 'top-right' });
       } finally {
         setIsLoading(false);
       }
@@ -159,14 +157,10 @@ const Checkout = ({ cart, setCart }) => {
     >
       <div className="container mx-auto max-w-6xl px-4 sm:px-6">
         <div className="bg-blue-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-t-lg">
-          <div className="flex flex-wrap justify-center sm:justify-between items-center text-xs sm:text-sm gap-2 sm:gap-0">
-            <div className="flex space-x-2 sm:space-x-4">
-              <span>SHOPPING CART</span>
-              <span>→</span>
-              <span className="font-bold">CHECKOUT</span>
-              <span>→</span>
-              <span>ORDER COMPLETE</span>
-            </div>
+          <div className="flex justify-between items-center text-xs sm:text-sm">
+            <span>SHOPPING CART</span>
+            <span className="font-bold">CHECKOUT</span>
+            <span>ORDER COMPLETE</span>
           </div>
         </div>
 
@@ -184,11 +178,13 @@ const Checkout = ({ cart, setCart }) => {
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
                 placeholder="Enter coupon code"
-                className="block w-full max-w-xs border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
+                className="block w-full max-w-xs border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
               />
               <button
                 onClick={applyCoupon}
-                className="bg-blue-500 text-white px-3 py-1 sm:px-4 sm:py-2 rounded-md hover:bg-blue-600 transition-colors text-sm"
+                disabled={isLoading}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors text-sm disabled:opacity-50"
               >
                 Apply
               </button>
@@ -196,109 +192,141 @@ const Checkout = ({ cart, setCart }) => {
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 mt-4 sm:mt-6">
-          {/* Your Order Section - Moved to top on mobile */}
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md order-first lg:order-last">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4">Your Order</h2>
-            <div className="border-b pb-3 sm:pb-4 mb-3 sm:mb-4">
-              <div className="flex justify-between font-semibold text-sm sm:text-base">
+        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 mt-6">
+          <div className="bg-white p-6 rounded-lg shadow-md order-first lg:order-last lg:sticky lg:top-6">
+            <h2 className="text-xl font-semibold mb-4">Your Order</h2>
+            <div className="border-b pb-4 mb-4">
+              <div className="flex justify-between font-semibold text-base">
                 <span>PRODUCT</span>
                 <span>SUBTOTAL</span>
               </div>
-              {cart.map((item) => (
-                <div key={item.id} className="flex justify-between mt-2 text-xs sm:text-sm">
-                  <div className="flex items-center space-x-2">
-                    <img
-                      src={item.img}
-                      alt={item.title}
-                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-md"
-                    />
-                    <span className="truncate max-w-[150px] sm:max-w-[200px]">
-                      {item.title} x {item.quantity}
+              {cart.length === 0 ? (
+                <p className="text-sm text-gray-500 mt-2">Your cart is empty.</p>
+              ) : (
+                cart.map((item, index) => (
+                  <div key={item.id || index} className="flex justify-between mt-4 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-gray-500 hover:text-red-500 text-sm font-medium"
+                      >
+                        X
+                      </button>
+                      <img
+                        src={item.img || 'https://via.placeholder.com/48'}
+                        alt={item.title || 'Product Image'}
+                        className="w-12 h-12 object-cover rounded-md"
+                        onError={(e) => (e.target.src = 'https://via.placeholder.com/48')}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-gray-800 font-medium">
+                          {item.title || 'Unknown Product'}
+                        </span>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            className="border border-gray-300 rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            -
+                          </button>
+                          <span className="text-gray-800">{item.quantity || 1}</span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="border border-gray-300 rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-gray-800 font-medium">
+                      {((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP
                     </span>
                   </div>
-                  <span>{(item.price * item.quantity).toFixed(2)} EGP</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
-            <div className="flex justify-between font-semibold text-sm sm:text-base">
-              <span>Subtotal</span>
-              <span>{subtotal.toFixed(2)} EGP</span>
-            </div>
-            {isCouponApplied && (
-              <div className="flex justify-between text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">
-                <span>Discount (10%)</span>
-                <span>-{discountAmount.toFixed(2)} EGP</span>
+            <div className="space-y-3">
+              <div className="flex justify-between font-semibold text-base">
+                <span>Subtotal</span>
+                <span>{subtotal.toFixed(2)} EGP</span>
               </div>
-            )}
-            <div className="flex justify-between text-gray-600 mt-1 sm:mt-2 text-xs sm:text-sm">
-              <span>Shipping Fee</span>
-              <span>{shippingFee.toFixed(2)} EGP</span>
-            </div>
-            <div className="flex justify-between font-bold text-base sm:text-lg mt-3 sm:mt-4">
-              <span>Total</span>
-              <span>{total.toFixed(2)} EGP</span>
+              <div className="flex justify-between font-bold text-lg mt-4">
+                <span>Total</span>
+                <span>{total.toFixed(2)} EGP</span>
+              </div>
             </div>
           </div>
 
-          {/* Billing Details and Payment */}
-          <div className="space-y-4 sm:space-y-6 flex-1">
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Billing Details</h2>
+          <div className="space-y-6 flex-1">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Billing Details</h2>
               <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
                         First name <span className="text-red-500">*</span>
                       </label>
                       <input
+                        id="firstName"
                         type="text"
                         name="firstName"
                         value={billingDetails.firstName}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        disabled={isLoading}
+                        className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                         required
+                        aria-required="true"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                         Last name <span className="text-red-500">*</span>
                       </label>
                       <input
+                        id="lastName"
                         type="text"
                         name="lastName"
                         value={billingDetails.lastName}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        disabled={isLoading}
+                        className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                         required
+                        aria-required="true"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
                       Company name (optional)
                     </label>
                     <input
+                      id="companyName"
                       type="text"
                       name="companyName"
                       value={billingDetails.companyName}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700">
                       Country / Region <span className="text-red-500">*</span>
                     </label>
                     <select
+                      id="country"
                       name="country"
                       value={billingDetails.country}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                       required
+                      aria-required="true"
                     >
                       <option value="Egypt">Egypt</option>
                       <option value="USA">USA</option>
@@ -307,52 +335,63 @@ const Checkout = ({ cart, setCart }) => {
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">
                       Street address <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="address"
                       type="text"
                       name="address"
                       value={billingDetails.address}
                       onChange={handleInputChange}
                       placeholder="House number and street name"
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                       required
+                      aria-required="true"
                     />
                     <input
+                      id="apartment"
                       type="text"
                       name="apartment"
                       value={billingDetails.apartment}
                       onChange={handleInputChange}
                       placeholder="Apartment, suite, unit, etc. (optional)"
-                      className="mt-2 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-2 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="townCity" className="block text-sm font-medium text-gray-700">
                       Town / City <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="townCity"
                       type="text"
                       name="townCity"
                       value={billingDetails.townCity}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                       required
+                      aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="stateCounty" className="block text-sm font-medium text-gray-700">
                       State / County <span className="text-red-500">*</span>
                     </label>
                     <select
+                      id="stateCounty"
                       name="stateCounty"
                       value={billingDetails.stateCounty}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                       required
+                      aria-required="true"
                     >
                       <option value="">Select a state</option>
                       <option value="Cairo">Cairo</option>
@@ -362,103 +401,82 @@ const Checkout = ({ cart, setCart }) => {
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="postcode" className="block text-sm font-medium text-gray-700">
                       Postcode / ZIP <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="postcode"
                       type="text"
                       name="postcode"
                       value={billingDetails.postcode}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                       required
+                      aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                       Phone <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="phone"
                       type="tel"
                       name="phone"
                       value={billingDetails.phone}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                       required
+                      aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                       Email address <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="email"
                       type="email"
                       name="email"
                       value={billingDetails.email}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                       required
+                      aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor="orderNotes" className="block text-sm font-medium text-gray-700">
                       Order notes (optional)
                     </label>
                     <textarea
+                      id="orderNotes"
                       name="orderNotes"
                       value={billingDetails.orderNotes}
                       onChange={handleInputChange}
                       placeholder="Notes about your order, e.g. special notes for delivery."
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
-                      rows="3 sm:rows-4"
+                      disabled={isLoading}
+                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      rows="4"
                     />
-                  </div>
-
-                  <div className="mt-4">
-                    <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Shipping Method</h2>
-                    <div className="space-y-2">
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name="shippingMethod"
-                          value="standard"
-                          checked={billingDetails.shippingMethod === 'standard'}
-                          onChange={handleInputChange}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                        />
-                        <label className="ml-2 text-xs sm:text-sm text-gray-700">
-                          Standard Shipping (50 EGP)
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name="shippingMethod"
-                          value="express"
-                          checked={billingDetails.shippingMethod === 'express'}
-                          onChange={handleInputChange}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                        />
-                        <label className="ml-2 text-xs sm:text-sm text-gray-700">
-                          Express Shipping (100 EGP)
-                        </label>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </form>
             </div>
 
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-              <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Payment Information</h2>
-              <div className="border border-gray-200 rounded-md p-3 sm:p-4 bg-gray-50">
-                <p className="font-medium text-gray-700 text-sm sm:text-base">Cash on delivery</p>
-                <p className="text-gray-500 mt-1 text-xs sm:text-sm">Pay with cash upon delivery.</p>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
+              <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
+                <p className="font-medium text-gray-700 text-base">Cash on Delivery</p>
+                <p className="text-gray-500 mt-1 text-sm">Pay with cash upon delivery.</p>
               </div>
-              <p className="text-gray-500 text-xs sm:text-sm mt-3 sm:mt-4">
+              <p className="text-gray-500 text-sm mt-4">
                 Your personal data will be used to process your order, support your experience
                 throughout this website, and for other purposes described in our{' '}
                 <Link to="/privacy-policy" className="text-blue-500 hover:underline">
@@ -469,14 +487,14 @@ const Checkout = ({ cart, setCart }) => {
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className={`w-full mt-4 sm:mt-6 bg-blue-600 text-white py-2 sm:py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base ${
+                className={`w-full mt-6 bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-base ${
                   isLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 {isLoading ? (
                   <>
-                    <FaSpinner className="animate-spin h-4 w-4 sm:h-5 sm:w-5" />
-                    <span>Processing...</span>
+                    <FaSpinner className="animate-spin h-5 w-5" />
+                    <span>Processing Your Order...</span>
                   </>
                 ) : (
                   <span>Place Order</span>

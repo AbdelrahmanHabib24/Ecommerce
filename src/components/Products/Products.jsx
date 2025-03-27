@@ -312,6 +312,7 @@ const Products = ({ cart, setCart, wishlist, setWishlist, cartPopup, setCartPopu
         <WishlistPopup
           wishlist={wishlist}
           setWishlist={setWishlist}
+          setCart={setCart} // Add this prop
         />
       </div>
     </div>
