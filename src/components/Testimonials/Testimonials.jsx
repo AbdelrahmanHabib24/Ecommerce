@@ -1,4 +1,5 @@
-import React from "react";
+/* eslint-disable react/jsx-key */
+
 import Slider from "react-slick";
 
 const TestimonialData = [
