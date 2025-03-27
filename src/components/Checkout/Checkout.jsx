@@ -153,7 +153,7 @@ const Checkout = ({ cart, setCart }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-gray-100 min-h-screen py-6 sm:py-10"
+      className="bg-white dark:bg-gray-900 min-h-screen py-6 sm:py-10 text-gray-900 dark:text-gray-100"
     >
       <div className="container mx-auto max-w-6xl px-4 sm:px-6">
         <div className="bg-blue-600 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-t-lg">
@@ -167,7 +167,7 @@ const Checkout = ({ cart, setCart }) => {
         <div className="mt-4">
           <button
             onClick={() => setShowCouponInput(!showCouponInput)}
-            className="text-blue-500 hover:underline focus:outline-none text-sm"
+            className="text-blue-500 dark:text-blue-400 hover:underline focus:outline-none text-sm"
           >
             Have a coupon? Click here to enter your code
           </button>
@@ -179,12 +179,12 @@ const Checkout = ({ cart, setCart }) => {
                 onChange={(e) => setCouponCode(e.target.value)}
                 placeholder="Enter coupon code"
                 disabled={isLoading}
-                className="block w-full max-w-xs border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                className="block w-full max-w-xs border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               />
               <button
                 onClick={applyCoupon}
                 disabled={isLoading}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors text-sm disabled:opacity-50"
+                className="bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
               >
                 Apply
               </button>
@@ -193,22 +193,22 @@ const Checkout = ({ cart, setCart }) => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 mt-6">
-          <div className="bg-white p-6 rounded-lg shadow-md order-first lg:order-last lg:sticky lg:top-6">
-            <h2 className="text-xl font-semibold mb-4">Your Order</h2>
-            <div className="border-b pb-4 mb-4">
-              <div className="flex justify-between font-semibold text-base">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md order-first lg:order-last lg:sticky lg:top-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Your Order</h2>
+            <div className="border-b border-gray-200 dark:border-gray-600 pb-4 mb-4">
+              <div className="flex justify-between font-semibold text-base text-gray-900 dark:text-gray-100">
                 <span>PRODUCT</span>
                 <span>SUBTOTAL</span>
               </div>
               {cart.length === 0 ? (
-                <p className="text-sm text-gray-500 mt-2">Your cart is empty.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Your cart is empty.</p>
               ) : (
                 cart.map((item, index) => (
                   <div key={item.id || index} className="flex justify-between mt-4 text-sm">
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-gray-500 hover:text-red-500 text-sm font-medium"
+                        className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium"
                       >
                         X
                       </button>
@@ -219,28 +219,28 @@ const Checkout = ({ cart, setCart }) => {
                         onError={(e) => (e.target.src = 'https://via.placeholder.com/48')}
                       />
                       <div className="flex flex-col">
-                        <span className="text-gray-800 font-medium">
+                        <span className="text-gray-800 dark:text-gray-200 font-medium">
                           {item.title || 'Unknown Product'}
                         </span>
                         <div className="flex items-center space-x-2 mt-1">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             disabled={item.quantity <= 1}
-                            className="border border-gray-300 rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                            className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
                           >
                             -
                           </button>
-                          <span className="text-gray-800">{item.quantity || 1}</span>
+                          <span className="text-gray-800 dark:text-gray-200">{item.quantity || 1}</span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="border border-gray-300 rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100"
+                            className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             +
                           </button>
                         </div>
                       </div>
                     </div>
-                    <span className="text-gray-800 font-medium">
+                    <span className="text-gray-800 dark:text-gray-200 font-medium">
                       {((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP
                     </span>
                   </div>
@@ -248,11 +248,11 @@ const Checkout = ({ cart, setCart }) => {
               )}
             </div>
             <div className="space-y-3">
-              <div className="flex justify-between font-semibold text-base">
+              <div className="flex justify-between font-semibold text-base text-gray-900 dark:text-gray-100">
                 <span>Subtotal</span>
                 <span>{subtotal.toFixed(2)} EGP</span>
               </div>
-              <div className="flex justify-between font-bold text-lg mt-4">
+              <div className="flex justify-between font-bold text-lg mt-4 text-gray-900 dark:text-gray-100">
                 <span>Total</span>
                 <span>{total.toFixed(2)} EGP</span>
               </div>
@@ -260,13 +260,13 @@ const Checkout = ({ cart, setCart }) => {
           </div>
 
           <div className="space-y-6 flex-1">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Billing Details</h2>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Billing Details</h2>
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         First name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -276,13 +276,13 @@ const Checkout = ({ cart, setCart }) => {
                         value={billingDetails.firstName}
                         onChange={handleInputChange}
                         disabled={isLoading}
-                        className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                        className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         required
                         aria-required="true"
                       />
                     </div>
                     <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Last name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -292,7 +292,7 @@ const Checkout = ({ cart, setCart }) => {
                         value={billingDetails.lastName}
                         onChange={handleInputChange}
                         disabled={isLoading}
-                        className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                        className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         required
                         aria-required="true"
                       />
@@ -300,7 +300,7 @@ const Checkout = ({ cart, setCart }) => {
                   </div>
 
                   <div>
-                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Company name (optional)
                     </label>
                     <input
@@ -310,12 +310,12 @@ const Checkout = ({ cart, setCart }) => {
                       value={billingDetails.companyName}
                       onChange={handleInputChange}
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Country / Region <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -324,7 +324,7 @@ const Checkout = ({ cart, setCart }) => {
                       value={billingDetails.country}
                       onChange={handleInputChange}
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       required
                       aria-required="true"
                     >
@@ -335,7 +335,7 @@ const Checkout = ({ cart, setCart }) => {
                   </div>
 
                   <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Street address <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -346,7 +346,7 @@ const Checkout = ({ cart, setCart }) => {
                       onChange={handleInputChange}
                       placeholder="House number and street name"
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       required
                       aria-required="true"
                     />
@@ -358,12 +358,12 @@ const Checkout = ({ cart, setCart }) => {
                       onChange={handleInputChange}
                       placeholder="Apartment, suite, unit, etc. (optional)"
                       disabled={isLoading}
-                      className="mt-2 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="townCity" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="townCity" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Town / City <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -373,14 +373,14 @@ const Checkout = ({ cart, setCart }) => {
                       value={billingDetails.townCity}
                       onChange={handleInputChange}
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       required
                       aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="stateCounty" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="stateCounty" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       State / County <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -389,7 +389,7 @@ const Checkout = ({ cart, setCart }) => {
                       value={billingDetails.stateCounty}
                       onChange={handleInputChange}
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       required
                       aria-required="true"
                     >
@@ -401,7 +401,7 @@ const Checkout = ({ cart, setCart }) => {
                   </div>
 
                   <div>
-                    <label htmlFor="postcode" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="postcode" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Postcode / ZIP <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -411,14 +411,14 @@ const Checkout = ({ cart, setCart }) => {
                       value={billingDetails.postcode}
                       onChange={handleInputChange}
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       required
                       aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Phone <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -428,14 +428,14 @@ const Checkout = ({ cart, setCart }) => {
                       value={billingDetails.phone}
                       onChange={handleInputChange}
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       required
                       aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Email address <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -445,14 +445,14 @@ const Checkout = ({ cart, setCart }) => {
                       value={billingDetails.email}
                       onChange={handleInputChange}
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       required
                       aria-required="true"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="orderNotes" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="orderNotes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Order notes (optional)
                     </label>
                     <textarea
@@ -462,7 +462,7 @@ const Checkout = ({ cart, setCart }) => {
                       onChange={handleInputChange}
                       placeholder="Notes about your order, e.g. special notes for delivery."
                       disabled={isLoading}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                       rows="4"
                     />
                   </div>
@@ -470,16 +470,16 @@ const Checkout = ({ cart, setCart }) => {
               </form>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-              <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
-                <p className="font-medium text-gray-700 text-base">Cash on Delivery</p>
-                <p className="text-gray-500 mt-1 text-sm">Pay with cash upon delivery.</p>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Payment Information</h2>
+              <div className="border border-gray-200 dark:border-gray-600 rounded-md p-4 bg-gray-50 dark:bg-gray-700">
+                <p className="font-medium text-gray-700 dark:text-gray-200 text-base">Cash on Delivery</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Pay with cash upon delivery.</p>
               </div>
-              <p className="text-gray-500 text-sm mt-4">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-4">
                 Your personal data will be used to process your order, support your experience
                 throughout this website, and for other purposes described in our{' '}
-                <Link to="/privacy-policy" className="text-blue-500 hover:underline">
+                <Link to="/privacy-policy" className="text-blue-500 dark:text-blue-400 hover:underline">
                   privacy policy
                 </Link>
                 .
@@ -487,7 +487,7 @@ const Checkout = ({ cart, setCart }) => {
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className={`w-full mt-6 bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 text-base ${
+                className={`w-full mt-6 bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors flex items-center justify-center space-x-2 text-base ${
                   isLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
