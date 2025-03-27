@@ -10,10 +10,10 @@ import DarkMode from './DarkMode';
 
 const Menu = [
   { id: 1, name: 'Home', link: '/' },
-  { id: 2, name: 'Top Rated', link: '#TopProducts' },
-  { id: 3, name: 'Kids Wear', link: '#Products' },
-  { id: 4, name: 'Mens Wear', link: '#Products' },
-  { id: 5, name: 'Electronics', link: '#Products' },
+  { id: 2, name: 'Top Rated', link: '/#TopProducts' },
+  { id: 3, name: 'Kids Wear', link: '/#Products' },
+  { id: 4, name: 'Mens Wear', link: '/#Products' },
+  { id: 5, name: 'Electronics', link: '/#Products' },
 ];
 
 const Navbar = ({ wishlist = [], cart = [], setCartPopup, setWishlistPopup }) => {

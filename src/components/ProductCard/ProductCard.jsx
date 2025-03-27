@@ -77,7 +77,7 @@ const ProductCard = ({ product, onViewDetails, onAddToCart, onToggleWishlist, wi
     <div
       ref={cardRef}
       data-product-id={product.id}
-      data-aos="zoom-in-up"
+      data-aos="zoom-in"
       data-aos-delay={product.aosDelay || "0"}
       className="group relative space-y-3 w-[200px] h-[400px] bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex flex-col justify-between"
     >

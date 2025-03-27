@@ -232,7 +232,7 @@ const Products = ({ cart, setCart, wishlist, setWishlist, cartPopup, setCartPopu
         }
         return [...prevCart, { ...product, quantity: 1 }];
       });
-      setCartPopup(true);
+      setCartPopup(false);
     },
     [setCart, setCartPopup]
   );
@@ -258,7 +258,7 @@ const Products = ({ cart, setCart, wishlist, setWishlist, cartPopup, setCartPopu
   if (error) return <div className="text-center text-red-500 py-10">{error}</div>;
 
   return (
-    <div className="mt-14 mb-12 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div id='Products' className="  mt-14 mb-12 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10 max-w-[600px] mx-auto">
           <p data-aos="fade-up" className="text-sm text-primary">
