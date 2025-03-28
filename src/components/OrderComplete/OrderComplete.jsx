@@ -151,7 +151,7 @@ const OrderComplete = () => {
       transition={{ duration: 0.5 }}
       className="bg-gray-100 dark:bg-gray-900 min-h-screen py-12"
     >
-      <div className="container mx-auto max-w-3xl px-4">
+      <div className="container overflow-hidden mx-auto max-w-3xl px-4">
         {/* رسالة الشكر */}
         <motion.h1
           variants={containerVariants}
@@ -212,7 +212,6 @@ const OrderComplete = () => {
             </div>
           </div>
         </motion.div>
-
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -235,7 +234,7 @@ const OrderComplete = () => {
                 transition={{ delay: 0.5 }}
                 className="flex items-center justify-between mt-3 sm:mt-4 text-gray-600 dark:text-gray-400"
               >
-                <div className="flex items-center space-x-2 sm:space-x-3 w-full">
+                <div className="flex items-center space-x-2 sm:space-x-3 w-full max-w-[70%]">
                   {item.img && (
                     <img
                       src={item.img}
@@ -248,7 +247,7 @@ const OrderComplete = () => {
                     {item.title} x {item.quantity}
                   </span>
                 </div>
-                <span className="text-sm sm:text-base font-medium whitespace-nowrap">
+                <span className="text-sm sm:text-base font-medium whitespace-nowrap flex-shrink-0">
                   {(item.price * item.quantity).toFixed(2)} EGP
                 </span>
               </motion.div>
