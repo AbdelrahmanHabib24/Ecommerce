@@ -1,3 +1,33 @@
 @tailwind base;  
 @tailwind components;  
 @tailwind utilities; 
+
+
+/* index.css */
+.mask-transparent {
+    -webkit-mask-image: url('/mask.svg'); /* لأجهزة WebKit */
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: cover;
+    mask-image: url('/mask.svg');         /* لأغلب المتصفحات */
+    mask-repeat: no-repeat;
+    mask-size: cover;
+    background-color: white;              /* fallback للعنصر */
+  }
+  
+  @keyframes typing {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  
+  .typing-effect {
+    overflow: hidden;
+    white-space: nowrap;
+    display: inline-block;
+    animation: typing 3s steps(40, end) forwards;
+  }
+  
+  

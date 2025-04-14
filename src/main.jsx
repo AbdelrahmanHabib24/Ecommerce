@@ -1,11 +1,16 @@
-import React from "react";
+// src/index.jsx (or src/main.jsx)
 import ReactDOM from "react-dom/client";
-import App from "./App.jsx";
+import { Provider } from "react-redux";
+import {store} from "./Store/Store"; // Adjusted case to match typical file naming conventions
+import App from "./App";
 import "./index.css";
-import "slick-carousel/slick/slick.css";
-import 'slick-carousel/slick/slick-theme.css';
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+
+// Get the root element
+const rootElement = document.getElementById("root");
+
+
+  ReactDOM.createRoot(rootElement).render(
+    <Provider store={store}>
+      <App />
+    </Provider>
+  );

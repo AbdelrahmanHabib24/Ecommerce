@@ -1,321 +1,282 @@
-/* eslint-disable no-unused-vars */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import PropTypes from 'prop-types';
-import ProductCard from '../ProductCard/ProductCard';
-import InfiniteScroll from 'react-infinite-scroll-component';
+/* eslint-disable react/prop-types */
+import { useEffect, useMemo, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { addToCart } from "@/redux/slices/cartSlice";
+import { toast } from "react-toastify";
+import CartPopup from "@/components/shared/CartPopup";
+import Pagination from "@/components/shared/Pagination";
+import ProductCard from "@/components/product/ProductCard";
+import LazyImage from "@/components/shared/LazyImage";
+import { setCategory, setSortBy } from "@/redux/slices/filterSlice";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
-// مكون فرعي لعرض الـ Pagination
-const Pagination = ({ currentPage, totalPages, setCurrentPage }) => {
-  const maxPagesToShow = window.innerWidth < 640 ? 3 : 5; // 3 أزرار على الموبايل، 5 على الشاشات الأكبر
-  const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-  const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+// Constants
+const ProductList = ({ products }) => {
+  const dispatch = useDispatch();
+  const { selectedCategory } = useSelector((state) => state.filters);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupProduct, setPopupProduct] = useState(null);
+  const [sortOption, setSortOption] = useState("default");
+  const [paginationMode, setPaginationMode] = useState("pagination");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage, setProductsPerPage] = useState(12);
+  const [visibleProducts, setVisibleProducts] = useState(productsPerPage);
 
-  const pages = Array.from(
-    { length: endPage - startPage + 1 },
-    (_, index) => startPage + index
-  );
-
-  return (
-    <div className="flex justify-center mt-4 sm:mt-6 space-x-1 sm:space-x-2">
-      {/* زر Previous */}
-      <button
-        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-        disabled={currentPage === 1}
-        className={`px-2 py-1 sm:px-3 sm:py-1 rounded-md font-medium transition-colors text-xs sm:text-sm ${
-          currentPage === 1
-            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-        } dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:border-gray-600`}
-      >
-        Previous
-      </button>
-
-      {/* الصفحة الأولى ونقاط التمدد إذا لزم الأمر */}
-      {startPage > 1 && (
-        <>
-          <button
-            onClick={() => setCurrentPage(1)}
-            className="px-2 py-1 sm:px-3 sm:py-1 rounded-md text-xs sm:text-sm bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:border-gray-600"
-          >
-            1
-          </button>
-          {startPage > 2 && (
-            <span className="px-2 py-1 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-              ...
-            </span>
-          )}
-        </>
-      )}
-
-      {/* أزرار الصفحات */}
-      {pages.map((page) => (
-        <button
-          key={page}
-          onClick={() => setCurrentPage(page)}
-          className={`px-2 py-1 sm:px-3 sm:py-1 rounded-md font-medium transition-colors text-xs sm:text-sm ${
-            currentPage === page
-              ? 'bg-primary text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:border-gray-600'
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-
-      {/* الصفحة الأخيرة ونقاط التمدد إذا لزم الأمر */}
-      {endPage < totalPages && (
-        <>
-          {endPage < totalPages - 1 && (
-            <span className="px-2 py-1 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-              ...
-            </span>
-          )}
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            className="px-2 py-1 sm:px-3 sm:py-1 rounded-md text-xs sm:text-sm bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:border-gray-600"
-          >
-            {totalPages}
-          </button>
-        </>
-      )}
-
-      {/* زر Next */}
-      <button
-        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-        disabled={currentPage === totalPages}
-        className={`px-2 py-1 sm:px-3 sm:py-1 rounded-md font-medium transition-colors text-xs sm:text-sm ${
-          currentPage === totalPages
-            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-        } dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:border-gray-600`}
-      >
-        Next
-      </button>
-    </div>
-  );
-};
-
-// مكون ProductList الرئيسي
-const ProductList = ({
-  products,
-  loading,
-  onViewDetails,
-  onAddToCart,
-  onToggleWishlist,
-  wishlist,
-  currentPage,
-  totalPages,
-  setCurrentPage,
-  productsPerPage,
-  observer,
-}) => {
-  const [displayedProductsCount, setDisplayedProductsCount] = useState(productsPerPage);
-  const [useInfiniteScroll, setUseInfiniteScroll] = useState(false);
-  const [itemsPerPage, setItemsPerPage] = useState(productsPerPage);
-  const [filteredProducts, setFilteredProducts] = useState(products);
-  const observerRef = useRef(observer);
-
-  // إعداد IntersectionObserver إذا لم يتم تمريره
+  // Initialize AOS
   useEffect(() => {
-    if (!observer) {
-      observerRef.current = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              // يمكن إضافة منطق هنا إذا لزم الأمر
-            }
-          });
-        },
-        { rootMargin: '100px' }
-      );
+    AOS.init({ duration: 800, easing: "ease-in-out", once: true });
+  }, []);
+
+  // Normalize product images
+  const normalizedProducts = useMemo(
+    () =>
+      products.map((product) => ({
+        ...product,
+        img: product.img || product.image,
+      })),
+    [products]
+  );
+
+  // Filter products by category
+  const filteredProducts = useMemo(
+    () =>
+      selectedCategory === ""
+        ? normalizedProducts
+        : normalizedProducts.filter(
+            (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
+          ),
+    [normalizedProducts, selectedCategory]
+  );
+
+  // Sort products
+  const sortedProducts = useMemo(() => {
+    const sorted = [...filteredProducts];
+    if (sortOption === "price-asc") sorted.sort((a, b) => a.price - b.price);
+    else if (sortOption === "price-desc") sorted.sort((a, b) => b.price - a.price);
+    else if (sortOption === "rating") sorted.sort((a, b) => (b.rating?.rate || 0) - (a.rating?.rate || 0));
+    return sorted;
+  }, [filteredProducts, sortOption]);
+
+  // Paginate or infinite scroll products
+  const paginatedProducts = useMemo(() => {
+    if (paginationMode === "pagination") {
+      const start = (currentPage - 1) * productsPerPage;
+      return sortedProducts.slice(start, start + productsPerPage);
     }
-    return () => {
-      if (!observer && observerRef.current) {
-        observerRef.current.disconnect();
+    return sortedProducts.slice(0, visibleProducts);
+  }, [sortedProducts, currentPage, productsPerPage, paginationMode, visibleProducts]);
+
+  // Handlers
+  const handleAddToCart = (product) => {
+    const normalizedProduct = { ...product };
+    dispatch(addToCart(normalizedProduct));
+    setPopupProduct(normalizedProduct);
+    setShowPopup(true);
+    toast.success(`${product.title} تمت إضافته إلى السلة.`);
+  };
+
+  const handleSortChange = (e) => {
+    const selected = e.target.value;
+    setSortOption(selected);
+    dispatch(setSortBy(selected));
+  };
+
+  const handleCategoryChange = (e) => dispatch(setCategory(e.target.value));
+
+  const handlePaginationModeChange = (e) => setPaginationMode(e.target.value);
+
+  const handleProductsPerPageChange = (e) => {
+    setProductsPerPage(parseInt(e.target.value, 10));
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Infinite scroll effect
+  useEffect(() => {
+    if (paginationMode !== "infinite") return;
+
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop + 100 >=
+        document.documentElement.scrollHeight
+      ) {
+        setVisibleProducts((prev) => prev + productsPerPage);
       }
     };
-  }, [observer]);
-
-  // تحديث filteredProducts عند تغيير products مع تحقق من البيانات
-  useEffect(() => {
-    const validProducts = products.map((product) => ({
-      ...product,
-      img: product.img && product.img !== '' ? product.img : 'https://via.placeholder.com/150?text=Image+Not+Found',
-    }));
-    setFilteredProducts(validProducts);
-  }, [products]);
-
-  // المنتجات المعروضة بناءً على التقسيم أو التمرير اللانهائي
-  const paginatedProducts = useInfiniteScroll
-    ? filteredProducts.slice(0, displayedProductsCount)
-    : filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  // إعادة حساب totalPages بناءً على filteredProducts
-  const updatedTotalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-
-  // دالة لتحميل المزيد من المنتجات عند التمرير اللانهائي
-  const loadMore = useCallback(() => {
-    setDisplayedProductsCount((prev) => prev + itemsPerPage);
-  }, [itemsPerPage]);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [paginationMode, productsPerPage]);
 
   return (
-    <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      {/* خيارات العرض */}
-      <div className="flex flex-col sm:flex-row justify-center items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-60">
-        <div className="flex items-center">
-          <label className="text-gray-700 dark:text-gray-300 mr-2">
-            Products per page:
+    <div className="py-4 sm:py-8 px-2 sm:px-4 container mx-auto">
+      {/* Filters Section */}
+      <div
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 bg-gray-100 dark:bg-gray-800 p-3 sm:p-4 rounded-lg shadow-md"
+        data-aos="fade-down"
+        data-aos-delay="50"
+        data-aos-duration="800"
+        data-aos-once="true"
+      >
+        <div className="w-full sm:w-auto">
+          <label
+            htmlFor="category"
+            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            التصنيف:
           </label>
           <select
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            className="px-3 py-1 rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            id="category"
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            className="w-full sm:w-40 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+            data-aos="fade-down"
+            data-aos-delay="150"
+            data-aos-duration="800"
           >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
+            <option value="">كل التصنيفات</option>
+            <option value="electronics">الكترونيات</option>
+            <option value="jewelery">مجوهرات</option>
+            <option value="men's clothing">ملابس رجالي</option>
+            <option value="women's clothing">ملابس حريمي</option>
           </select>
         </div>
-        <div className="flex items-center">
-          <label className="text-gray-700 dark:text-gray-300 mr-2">
-            Display Mode:
+
+        <div className="w-full sm:w-auto">
+          <label
+            htmlFor="sort"
+            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            الترتيب:
           </label>
           <select
-            value={useInfiniteScroll ? 'infinite' : 'pagination'}
-            onChange={(e) => {
-              setUseInfiniteScroll(e.target.value === 'infinite');
-              setCurrentPage(1);
-              setDisplayedProductsCount(itemsPerPage);
-            }}
-            className="px-3 py-1 rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            id="sort"
+            value={sortOption}
+            onChange={handleSortChange}
+            className="w-full sm:w-48 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+            data-aos="fade-down"
+            data-aos-delay="250"
+            data-aos-duration="800"
           >
-            <option value="pagination">Pagination</option>
-            <option value="infinite">Infinite Scroll</option>
+            <option value="default">الافتراضي</option>
+            <option value="price-asc">السعر: من الأقل للأعلى</option>
+            <option value="price-desc">السعر: من الأعلى للأقل</option>
+            <option value="rating">الأعلى تقييماً</option>
+          </select>
+        </div>
+
+        <div className="w-full sm:w-auto">
+          <label
+            htmlFor="paginationMode"
+            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            وضع الصفحات:
+          </label>
+          <select
+            id="paginationMode"
+            value={paginationMode}
+            onChange={handlePaginationModeChange}
+            className="w-full sm:w-40 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+            data-aos="fade-down"
+            data-aos-delay="350"
+            data-aos-duration="800"
+          >
+            <option value="pagination">تقسيم الصفحات</option>
+            <option value="infinite">تمرير لا نهائي</option>
+          </select>
+        </div>
+
+        <div className="w-full sm:w-auto">
+          <label
+            htmlFor="productsPerPage"
+            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            عدد المنتجات لكل صفحة:
+          </label>
+          <select
+            id="productsPerPage"
+            value={productsPerPage}
+            onChange={handleProductsPerPageChange}
+            className="w-full sm:w-24 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+            data-aos="fade-down"
+            data-aos-delay="450"
+            data-aos-duration="800"
+          >
+            <option value={6}>6</option>
+            <option value={12}>12</option>
+            <option value={24}>24</option>
           </select>
         </div>
       </div>
 
-      {/* قائمة المنتجات */}
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em]"></div>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading products...</p>
-        </div>
-      ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-10 text-gray-600 dark:text-gray-400">
-          No products found. Try adjusting your filters.
-        </div>
-      ) : useInfiniteScroll ? (
-        <InfiniteScroll
-          dataLength={paginatedProducts.length}
-          next={loadMore}
-          hasMore={paginatedProducts.length < filteredProducts.length}
-          loader={
-            <div className="text-center py-4">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em]"></div>
-            </div>
-          }
-          endMessage={
-            <p className="text-center py-4 text-gray-600 dark:text-gray-400">
-              No more products to load.
-            </p>
-          }
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 place-items-center gap-6">
-            {paginatedProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onViewDetails={onViewDetails}
-                onAddToCart={onAddToCart}
-                onToggleWishlist={onToggleWishlist}
-                wishlist={wishlist}
-                observer={observer || observerRef.current}
-              />
-            ))}
-          </div>
-        </InfiniteScroll>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 place-items-center gap-6">
-          {paginatedProducts.map((product) => (
-            <ProductCard
+      {/* Products Grid */}
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+        data-aos="fade-up"
+        data-aos-delay="150"
+        data-aos-duration="800"
+        data-aos-once="true"
+      >
+        {paginatedProducts.length > 0 ? (
+          paginatedProducts.map((product, index) => (
+            <div
               key={product.id}
-              product={product}
-              onViewDetails={onViewDetails}
-              onAddToCart={onAddToCart}
-              onToggleWishlist={onToggleWishlist}
-              wishlist={wishlist}
-              observer={observer || observerRef.current}
-            />
-          ))}
+              data-aos="fade-up"
+              data-aos-delay={String(200 + index * 100)}
+              data-aos-duration="800"
+              data-aos-once="true"
+            >
+              <ProductCard product={product} LazyImage={LazyImage} onAddToCart={handleAddToCart} />
+            </div>
+          ))
+        ) : (
+          <div
+            className="col-span-full text-center py-6"
+            data-aos="fade-up"
+            data-aos-delay="150"
+            data-aos-duration="800"
+            data-aos-once="true"
+          >
+            <p className="text-gray-500 text-sm sm:text-base">لا توجد منتجات تطابق هذا التصنيف.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {paginationMode === "pagination" && sortedProducts.length > 0 && (
+        <div
+          className="mt-4 sm:mt-6"
+          data-aos="fade-up"
+          data-aos-delay="600"
+          data-aos-duration="800"
+          data-aos-once="true"
+        >
+          <Pagination
+            currentPage={currentPage}
+            productsPerPage={productsPerPage}
+            totalProducts={sortedProducts.length}
+            paginate={handlePageChange}
+          />
         </div>
       )}
 
-      {/* الـ Pagination أو زر View All */}
-      {!useInfiniteScroll && updatedTotalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={updatedTotalPages}
-          setCurrentPage={setCurrentPage}
-        />
-      )}
-
-      {/* زر View All Products */}
-      {!useInfiniteScroll && filteredProducts.length > itemsPerPage && (
-        <div className="flex justify-center mt-4 sm:mt-6">
-          <button
-            onClick={() => setItemsPerPage(filteredProducts.length)}
-            className="text-center px-4 py-1 sm:px-5 sm:py-2 bg-primary text-white rounded-md hover:bg-blue-600 transition-colors text-sm sm:text-base font-medium"
-          >
-            View All Products
-          </button>
+      {/* Cart Popup */}
+      {showPopup && popupProduct && (
+        <div
+          data-aos="zoom-in"
+          data-aos-delay="50"
+          data-aos-duration="800"
+          data-aos-once="true"
+        >
+          <CartPopup product={popupProduct} onClose={() => setShowPopup(false)} />
         </div>
       )}
     </div>
   );
-};
-
-// PropTypes لمكون Pagination
-Pagination.propTypes = {
-  currentPage: PropTypes.number.isRequired,
-  totalPages: PropTypes.number.isRequired,
-  setCurrentPage: PropTypes.func.isRequired,
-};
-
-// PropTypes لمكون ProductList
-ProductList.propTypes = {
-  products: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      img: PropTypes.string.isRequired,
-      title: PropTypes.string.isRequired,
-      rating: PropTypes.number.isRequired,
-      color: PropTypes.string.isRequired,
-      price: PropTypes.number.isRequired,
-      originalPrice: PropTypes.number.isRequired,
-      inStock: PropTypes.bool.isRequired,
-      category: PropTypes.string.isRequired,
-      description: PropTypes.string.isRequired,
-      aosDelay: PropTypes.string.isRequired,
-    })
-  ).isRequired,
-  loading: PropTypes.bool.isRequired,
-  onViewDetails: PropTypes.func.isRequired,
-  onAddToCart: PropTypes.func.isRequired,
-  onToggleWishlist: PropTypes.func.isRequired,
-  wishlist: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-    })
-  ).isRequired,
-  currentPage: PropTypes.number.isRequired,
-  totalPages: PropTypes.number.isRequired,
-  setCurrentPage: PropTypes.func.isRequired,
-  productsPerPage: PropTypes.number.isRequired,
-  observer: PropTypes.instanceOf(IntersectionObserver),
 };
 
 export default ProductList;

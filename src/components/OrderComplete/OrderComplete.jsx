@@ -1,76 +1,245 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useSelector } from "react-redux";
 import { jsPDF } from "jspdf";
 import { FaDownload, FaSpinner, FaEnvelope, FaTruck } from "react-icons/fa";
 import { toast } from "react-toastify";
+import "aos/dist/aos.css";
 
-// The text to animate
-const thankYouText = "Thank you. Your order has been received.";
-const characters = thankYouText.split("");
+const normalizeCart = (cartFromState, reduxCart) =>
+  (cartFromState || reduxCart).map((item) => ({
+    ...item,
+    img: item.img || item.image,
+  }));
+
+const ThankYouMessage = () => (
+  <h1
+  className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-6 sm:mb-8 lg:mb-10 text-center typing-effect"
+  data-aos="fade-down"
+  data-aos-delay="50"
+  data-aos-duration="800"
+  data-aos-once="true"
+>
+  Thank you. Your order has been received.
+</h1>
+
+);
+
+const OrderSummary = ({ orderNumber, date, total }) => (
+  <div
+    className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md mb-6 sm:mb-8"
+    data-aos="fade-up"
+    data-aos-delay="150"
+    data-aos-duration="800"
+    data-aos-once="true"
+  >
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 text-center">
+      <div>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          Order number:
+        </p>
+        <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base">
+          {orderNumber}
+        </p>
+      </div>
+      <div>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          Date:
+        </p>
+        <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base">
+          {date}
+        </p>
+      </div>
+      <div>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          Total:
+        </p>
+        <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base">
+          {total.toFixed(2)} EGP
+        </p>
+      </div>
+      <div>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          Payment method:
+        </p>
+        <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm sm:text-base">
+          Cash on delivery
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+const OrderItems = ({ cart, subtotal, total }) => (
+  <div
+    className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-lg shadow-md mb-6 sm:mb-8"
+    data-aos="fade-up"
+    data-aos-delay="250"
+    data-aos-duration="800"
+    data-aos-once="true"
+  >
+    <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4">
+      Order Details
+    </h2>
+    <div className="border-b border-gray-200 dark:border-gray-700 pb-3 sm:pb-4 mb-3 sm:mb-4">
+      <div className="flex justify-between font-semibold text-xs sm:text-base text-gray-700 dark:text-gray-300">
+        <span>PRODUCT</span>
+        <span>TOTAL</span>
+      </div>
+      {cart.map((item, index) => (
+        <div
+          key={item.id}
+          className="flex items-center justify-between mt-2 sm:mt-4 text-gray-600 dark:text-gray-400"
+          data-aos="fade-up"
+          data-aos-delay={String(300 + index * 100)}
+          data-aos-duration="800"
+          data-aos-once="true"
+        >
+          <div className="flex items-center space-x-2 sm:space-x-3 w-full max-w-[60%] sm:max-w-[70%]">
+            {item.img && (
+              <img
+                src={item.img}
+                alt={item.title}
+                className="w-8 h-8 sm:w-12 sm:h-12 object-cover rounded-md"
+              />
+            )}
+            <span className="text-xs sm:text-sm lg:text-base truncate">
+              {item.title} x {item.quantity}
+            </span>
+          </div>
+          <span className="text-xs sm:text-sm lg:text-base font-medium">
+            {((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP
+          </span>
+        </div>
+      ))}
+    </div>
+    <div className="flex justify-between font-semibold text-sm sm:text-base text-gray-800 dark:text-gray-100">
+      <span>Subtotal:</span>
+      <span>{subtotal.toFixed(2)} EGP</span>
+    </div>
+    <div className="flex justify-between font-bold text-base sm:text-lg mt-1 sm:mt-2 text-gray-800 dark:text-gray-100">
+      <span>Total:</span>
+      <span>{total.toFixed(2)} EGP</span>
+    </div>
+  </div>
+);
+
+const BillingAddress = ({ billingDetails }) => (
+  <div
+    className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md mb-6 sm:mb-8"
+    data-aos="fade-up"
+    data-aos-delay="350"
+    data-aos-duration="800"
+    data-aos-once="true"
+  >
+    <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3 sm:mb-4">
+      Billing Address
+    </h2>
+    <div className="space-y-1 sm:space-y-2 text-gray-600 dark:text-gray-400 text-xs sm:text-sm lg:text-base">
+      <p>
+        {billingDetails.firstName} {billingDetails.lastName}
+      </p>
+      {billingDetails.companyName && <p>{billingDetails.companyName}</p>}
+      <p>{billingDetails.address}</p>
+      {billingDetails.apartment && <p>{billingDetails.apartment}</p>}
+      <p>
+        {billingDetails.townCity}, {billingDetails.stateCounty}
+      </p>
+      <p>{billingDetails.country}</p>
+      <p>{billingDetails.postcode}</p>
+      <p>{billingDetails.phone}</p>
+      <p>{billingDetails.email}</p>
+    </div>
+  </div>
+);
+
+const ActionButtons = ({ downloadInvoice, sendConfirmationEmail }) => (
+  <div
+    className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4"
+    data-aos="fade-up"
+    data-aos-delay="450"
+    data-aos-duration="800"
+    data-aos-once="true"
+  >
+    <button
+      onClick={downloadInvoice}
+      className="flex items-center justify-center gap-2 bg-blue-500 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-md hover:bg-blue-600 text-sm sm:text-base"
+      data-aos="zoom-in"
+      data-aos-delay="500"
+      data-aos-duration="800"
+    >
+      <FaDownload /> Download Invoice
+    </button>
+    <button
+      onClick={sendConfirmationEmail}
+      className="flex items-center justify-center gap-2 bg-green-500 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-md hover:bg-green-600 text-sm sm:text-base"
+      data-aos="zoom-in"
+      data-aos-delay="600"
+      data-aos-duration="800"
+    >
+      <FaEnvelope /> Send Email
+    </button>
+    <Link
+      to="/"
+      className="flex items-center justify-center gap-2 bg-purple-500 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-md hover:bg-purple-600 text-sm sm:text-base"
+      data-aos="zoom-in"
+      data-aos-delay="700"
+      data-aos-duration="800"
+    >
+      <FaTruck /> Track Order
+    </Link>
+    <Link
+      to="/"
+      className="flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 py-2 sm:py-3 px-4 sm:px-6 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base"
+      data-aos="zoom-in"
+      data-aos-delay="800"
+      data-aos-duration="800"
+    >
+      Back to Home
+    </Link>
+  </div>
+);
 
 const OrderComplete = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { orderNumber, cart, billingDetails, total, date } = state || {};
+  const reduxCart = useSelector((state) => state.cart?.items || []);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Animation variants for the container (h1)
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.2,
-      },
-    },
-  };
+  const {
+    orderNumber,
+    cart: cartFromState,
+    billingDetails,
+    total,
+    date,
+  } = state || {};
+  const cart = normalizeCart(cartFromState, reduxCart);
+  const subtotal =
+    cart.reduce(
+      (acc, item) => acc + (item.price || 0) * (item.quantity || 1),
+      0
+    ) || 0;
 
-  // Animation variants for each character
-  const characterVariants = {
-    hidden: { y: -20, opacity: 0, scale: 0.8 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 20,
-        mass: 0.5,
-      },
-    },
-  };
+  // Initialize AOS
 
-  // Simulate loading
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirect to homepage if no state is found
   useEffect(() => {
-    if (!state) {
-      navigate("/");
+    if (!orderNumber || !cart.length || !billingDetails || !total || !date) {
+      toast.error("Order details are incomplete. Redirecting...");
+      setTimeout(() => navigate("/"), 2000);
     }
-  }, [state, navigate]);
+  }, [orderNumber, cart, billingDetails, total, date, navigate]);
 
-  // Calculate subtotal
-  const subtotal =
-    cart?.reduce((acc, item) => acc + item.price * item.quantity, 0) || 0;
-
-  // Function to download the order details as a PDF
   const downloadInvoice = () => {
     const doc = new jsPDF();
-    // Add a simple header (e.g., logo or store name)
     doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
     doc.text("MyStore - Order Confirmation", 20, 20);
     doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
     doc.text(`Order Number: ${orderNumber}`, 20, 35);
     doc.text(`Date: ${date}`, 20, 45);
     doc.text(`Total: ${total.toFixed(2)} EGP`, 20, 55);
@@ -80,9 +249,9 @@ const OrderComplete = () => {
     let yPosition = 85;
     cart.forEach((item, index) => {
       const productLine = `${index + 1}. ${item.title} x ${item.quantity} - ${(
-        item.price * item.quantity
+        (item.price || 0) * (item.quantity || 1)
       ).toFixed(2)} EGP`;
-      const splitText = doc.splitTextToSize(productLine, 170); // Wrap text if too long
+      const splitText = doc.splitTextToSize(productLine, 170);
       doc.text(splitText, 20, yPosition);
       yPosition += splitText.length * 5 + 5;
     });
@@ -110,218 +279,57 @@ const OrderComplete = () => {
     doc.text(billingDetails.postcode, 20, yPosition + 80);
     doc.text(billingDetails.phone, 20, yPosition + 90);
     doc.text(billingDetails.email, 20, yPosition + 100);
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text("Thank you for shopping with MyStore!", 20, yPosition + 120);
     doc.save(`Order_${orderNumber}.pdf`);
+    toast.success("Invoice downloaded successfully!");
   };
 
-  // Simulate sending a confirmation email
   const sendConfirmationEmail = () => {
-    // In a real app, this would integrate with an email service like SendGrid
-    toast.success("Confirmation email sent to " + billingDetails.email, {
-      position: "top-center",
-    });
+    toast.success(`Confirmation email sent to ${billingDetails.email}`);
   };
 
   if (isLoading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
+      <div
         className="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center"
+        data-aos="fade-in"
+        data-aos-delay="50"
+        data-aos-duration="800"
+        data-aos-once="true"
       >
-        <FaSpinner
-          className="animate-spin text-blue-500 w-8 h-8"
-          aria-label="Loading"
-        />
-      </motion.div>
+        <FaSpinner className="animate-spin text-blue-500 w-6 h-6 sm:w-8 sm:h-8" />
+      </div>
     );
   }
 
-  if (!state) {
-    return null;
+  if (!orderNumber || !cart.length || !billingDetails || !total || !date) {
+    return (
+      <div
+        className="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center"
+        data-aos="fade-in"
+        data-aos-delay="50"
+        data-aos-duration="800"
+        data-aos-once="true"
+      >
+        <p className="text-gray-800 dark:text-gray-100 text-base sm:text-lg">
+          No order details found. Redirecting...
+        </p>
+      </div>
+    );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="bg-gray-100 dark:bg-gray-900 min-h-screen py-12"
-    >
-      <div className="container overflow-hidden mx-auto max-w-3xl px-4">
-        {/* رسالة الشكر */}
-        <motion.h1
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="text-3xl sm:text-4xl lg:text-5xl font-bold  text-gray-800 dark:text-gray-100 mb-10 text-center relative"
-          aria-label="Thank you message"
-        >
-          <span className="relative inline-block">
-            {characters.map((char, index) => (
-              <motion.span
-                key={index}
-                variants={characterVariants}
-                className="inline-block"
-              >
-                {char === " " ? "\u00A0" : char}
-              </motion.span>
-            ))}
-            <span className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transform scale-x-0 origin-left motion-safe:transition-transform motion-safe:duration-500 motion-safe:delay-1000 group-hover:scale-x-100" />
-          </span>
-        </motion.h1>
-
-        {/* تفاصيل الطلب */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8"
-        >
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Order number:
-              </p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">
-                {orderNumber}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Date:</p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">
-                {date}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total:</p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">
-                {total.toFixed(2)} EGP
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Payment method:
-              </p>
-              <p className="font-semibold text-gray-800 dark:text-gray-100">
-                Cash on delivery
-              </p>
-            </div>
-          </div>
-        </motion.div>
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md mb-8"
-        >
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
-            Order Details
-          </h2>
-          <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-            <div className="flex justify-between items-center font-semibold text-sm sm:text-base text-gray-700 dark:text-gray-300">
-              <span>PRODUCT</span>
-              <span>TOTAL</span>
-            </div>
-            {cart.map((item) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center justify-between mt-3 sm:mt-4 text-gray-600 dark:text-gray-400"
-              >
-                <div className="flex items-center space-x-2 sm:space-x-3 w-full max-w-[70%]">
-                  {item.img && (
-                    <img
-                      src={item.img}
-                      alt={item.title}
-                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-md flex-shrink-0"
-                      loading="lazy"
-                    />
-                  )}
-                  <span className="text-sm sm:text-base truncate flex-1 min-w-0">
-                    {item.title} x {item.quantity}
-                  </span>
-                </div>
-                <span className="text-sm sm:text-base font-medium whitespace-nowrap flex-shrink-0">
-                  {(item.price * item.quantity).toFixed(2)} EGP
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-        {/* عنوان الفوترة (Billing Address) */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8"
-        >
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
-            Billing Address
-          </h2>
-          <div className="space-y-2 text-gray-600 dark:text-gray-400">
-            <p>
-              {billingDetails.firstName} {billingDetails.lastName}
-            </p>
-            {billingDetails.companyName && <p>{billingDetails.companyName}</p>}
-            <p>{billingDetails.address}</p>
-            {billingDetails.apartment && <p>{billingDetails.apartment}</p>}
-            <p>
-              {billingDetails.townCity}, {billingDetails.stateCounty}
-            </p>
-            <p>{billingDetails.country}</p>
-            <p>{billingDetails.postcode}</p>
-            <p>{billingDetails.phone}</p>
-            <p>{billingDetails.email}</p>
-          </div>
-        </motion.div>
-
-        {/* أزرار الإجراءات */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex flex-col sm:flex-row justify-center gap-4"
-        >
-          <button
-            onClick={downloadInvoice}
-            className="flex items-center justify-center gap-2 bg-blue-500 text-white py-3 px-6 rounded-md hover:bg-blue-600 transition-colors duration-200 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
-            aria-label="Download Invoice"
-          >
-            <FaDownload />
-            Download Invoice
-          </button>
-          <button
-            onClick={sendConfirmationEmail}
-            className="flex items-center justify-center gap-2 bg-green-500 text-white py-3 px-6 rounded-md hover:bg-green-600 transition-colors duration-200 focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
-            aria-label="Send Confirmation Email"
-          >
-            <FaEnvelope />
-            Send Email
-          </button>
-          <Link
-            to="#" // Placeholder for a future tracking page
-            className="flex items-center justify-center gap-2 bg-purple-500 text-white py-3 px-6 rounded-md hover:bg-purple-600 transition-colors duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            aria-label="Track Order"
-          >
-            <FaTruck />
-            Track Order
-          </Link>
-          <Link
-            to="/"
-            className="flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 py-3 px-6 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            aria-label="Back to Home"
-          >
-            Back to Home
-          </Link>
-        </motion.div>
+    <div className="bg-gray-100 dark:bg-gray-900 min-h-screen py-8 sm:py-12">
+      <div className="container mx-auto max-w-3xl px-2 sm:px-4">
+        <ThankYouMessage />
+        <OrderSummary orderNumber={orderNumber} date={date} total={total} />
+        <OrderItems cart={cart} subtotal={subtotal} total={total} />
+        <BillingAddress billingDetails={billingDetails} />
+        <ActionButtons
+          downloadInvoice={downloadInvoice}
+          sendConfirmationEmail={sendConfirmationEmail}
+        />
       </div>
-    </motion.div>
+    </div>
   );
 };
 

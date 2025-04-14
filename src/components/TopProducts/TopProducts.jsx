@@ -28,9 +28,9 @@ const ProductsData = [
       "lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   },
 ];
-const TopProducts = () => {
+const TopProducts = (index) => {
   return (
-    <div id="TopProducts">
+    <div key={index}  id="TopProducts">
       <div className="container">
         <div className="text-left mb-24">
           <p data-aos="fade-up" className="text-sm text-primary">
@@ -47,6 +47,7 @@ const TopProducts = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-20 md:gap-5 place-items-center">
           {ProductsData.map((data) => (
             <div
+              key={data.id}
               data-aos="zoom-in"
               className="rounded-2xl bg-white dark:bg-gray-800 hover:bg-black/80 dark:hover:bg-primary hover:text-white relative shadow-xl duration-300 group max-w-[300px]"
             >

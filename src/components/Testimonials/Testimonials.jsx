@@ -1,61 +1,53 @@
-/* eslint-disable react/jsx-key */
-
 import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 const TestimonialData = [
   {
     id: 1,
     name: "Victor",
-    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eaque reiciendis inventore iste ratione ex alias quis magni at optio",
+    text: "Exceptional quality and fast delivery! This store has become my go-to for all shopping needs.",
     img: "https://picsum.photos/101/101",
   },
   {
     id: 2,
     name: "Satya Nadella",
-    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eaque reiciendis inventore iste ratione ex alias quis magni at optio",
+    text: "Outstanding customer service and a fantastic selection of products. Highly recommended!",
     img: "https://picsum.photos/102/102",
   },
   {
     id: 3,
     name: "Virat Kohli",
-    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eaque reiciendis inventore iste ratione ex alias quis magni at optio",
+    text: "The best online shopping experience I've had. Great deals and reliable shipping.",
     img: "https://picsum.photos/104/104",
   },
   {
-    id: 5,
+    id: 4, // Fixed duplicate ID
     name: "Sachin Tendulkar",
-    text: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eaque reiciendis inventore iste ratione ex alias quis magni at optio",
+    text: "Amazing variety and unbeatable prices. Shopping here is always a pleasure!",
     img: "https://picsum.photos/103/103",
   },
 ];
 
 const Testimonials = () => {
-  var settings = {
+  const settings = {
     dots: true,
     arrows: false,
     infinite: true,
     speed: 500,
+    slidesToShow: 3,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 2000,
-    cssEase: "linear",
+    autoplaySpeed: 3000, // Increased for better readability
+    cssEase: "ease-in-out", // Changed to smoother transition
     pauseOnHover: true,
     pauseOnFocus: true,
     responsive: [
-      {
-        breakpoint: 10000,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 1,
-          infinite: true,
-        },
-      },
       {
         breakpoint: 1024,
         settings: {
           slidesToShow: 2,
           slidesToScroll: 1,
-          initialSlide: 2,
         },
       },
       {
@@ -69,56 +61,67 @@ const Testimonials = () => {
   };
 
   return (
-    <div className="py-10 mb-10">
-      <div className="container">
-        {/* header section */}
-        <div className="text-center mb-10 max-w-[600px] mx-auto">
-          <p data-aos="fade-up" className="text-sm text-primary">
-            What our customers are saying
+    <section className="py-16 bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="text-center mb-12 max-w-2xl mx-auto">
+          <p 
+            data-aos="fade-up" 
+            className="text-sm text-primary font-medium mb-2"
+          >
+            What Our Customers Are Saying
           </p>
-          <h1 data-aos="fade-up" className="text-3xl font-bold">
+          <h2 
+            data-aos="fade-up" 
+            data-aos-delay="100"
+            className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white"
+          >
             Testimonials
-          </h1>
-          <p data-aos="fade-up" className="text-xs text-gray-400">
-            Lorem ipsum dolor sit amet consectetur, adipisicing elit. Sit
-            asperiores modi Sit asperiores modi
+          </h2>
+          <p 
+            data-aos="fade-up" 
+            data-aos-delay="200"
+            className="text-sm text-gray-600 dark:text-gray-400 mt-4"
+          >
+            Hear from our satisfied customers about their shopping experiences
           </p>
         </div>
 
-        {/* Testimonial cards */}
-        <div data-aos="zoom-in">
+        {/* Testimonial Slider */}
+        <div data-aos="zoom-in" data-aos-delay="300">
           <Slider {...settings}>
             {TestimonialData.map((data) => (
-              <div className="my-6">
-                <div
-                  key={data.id}
-                  className="flex flex-col gap-4 shadow-lg py-8 px-6 mx-4 rounded-xl dark:bg-gray-800 bg-primary/10 relative"
-                >
-                  <div className="mb-4">
+              <div key={data.id} className="px-3 py-6">
+                <div className="flex flex-col gap-6 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 h-full relative overflow-hidden transition-all duration-300 hover:shadow-lg">
+                  {/* Quote Icon */}
+                  <span className="text-6xl text-primary/10 absolute top-2 right-2 font-serif">“</span>
+                  
+                  {/* Avatar */}
+                  <div className="flex justify-center">
                     <img
                       src={data.img}
-                      alt=""
-                      className="rounded-full w-20 h-20"
+                      alt={`${data.name}'s avatar`}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                      loading="lazy"
                     />
                   </div>
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="space-y-3">
-                      <p className="text-xs text-gray-500">{data.text}</p>
-                      <h1 className="text-xl font-bold text-black/80 dark:text-light">
-                        {data.name}
-                      </h1>
-                    </div>
+
+                  {/* Content */}
+                  <div className="text-center space-y-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                      {data.text}
+                    </p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {data.name}
+                    </h3>
                   </div>
-                  <p className="text-black/20 text-9xl font-serif absolute top-0 right-0">
-                    ,,
-                  </p>
                 </div>
               </div>
             ))}
           </Slider>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

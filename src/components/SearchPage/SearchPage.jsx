@@ -1,58 +1,80 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import PropTypes from 'prop-types';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import ProductCard from '../ProductCard/ProductCard';
-import { FaFilter } from 'react-icons/fa';
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import ProductCard from "../ProductCard/ProductCard";
+import { FaFilter, FaSpinner } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { addToCart } from "../../reducers/cartReducer";
+import { addToWishlist, removeFromWishlist } from "../../reducers/wishlistReducer";
 
-const SearchPage = ({  setCart, wishlist, setWishlist }) => {
+const EXCHANGE_RATE = 48;
+const MAX_PRICE_EGP = 74400;
+
+const cleanImageUrl = (image) =>
+  image?.trim()?.startsWith("http") ? image : "" || "";
+
+const SearchPage = () => {
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [priceRange, setPriceRange] = useState([0, 74400]);
+  const [error, setError] = useState(null);
+  const [priceRange, setPriceRange] = useState([0, MAX_PRICE_EGP]);
   const [stockFilter, setStockFilter] = useState({ inStock: false, outOfStock: false });
-  const [brandsFilter, setBrandsFilter] = useState({
-    hikvision: false,
-    microsoft: false,
-    team: false,
-    acer: false,
-  });
+  const [brandsFilter, setBrandsFilter] = useState({});
   const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [sortBy, setSortBy] = useState('relevance');
+  const [sortBy, setSortBy] = useState("relevance");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isFilterOpen, setIsFilterOpen] = useState(false); // State for mobile filter toggle
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(false); // Added state for "Show All Products"
 
-  const location = useLocation();
-  const searchQuery = new URLSearchParams(location.search).get('query') || '';
+  const dispatch = useDispatch();
+  const wishlist = useSelector((state) => state.wishlist?.items || []);
+  const cart = useSelector((state) => state.cart?.items || []);
+  const recentlyViewed = useSelector((state) => state.recentlyViewed || []);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get("query") || "";
 
-  // جلب المنتجات من API
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await fetch('https://api.escuelajs.co/api/v1/products');
-        if (!response.ok) throw new Error('Failed to fetch products');
+        const response = await fetch("https://fakestoreapi.com/products");
+        if (!response.ok) throw new Error("Failed to fetch products");
         const data = await response.json();
 
-        const formattedProducts = data.map((product, index) => ({
-          id: product.id,
-          img: product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/150',
-          title: product.title,
-          price: Number(product.price),
-          category: product.category.name,
-          description: product.description,
-          rating: Math.floor(Math.random() * 5) + 1,
-          originalPrice: Number(product.price) * 1.3,
-          inStock: Math.random() > 0.3,
-          brand: ['Hikvision', 'Microsoft', 'Team', 'Acer'][Math.floor(Math.random() * 4)],
-          aosDelay: String(index * 100),
-        }));
+        const formattedProducts = data.map((product, index) => {
+          let category = product.category || "Miscellaneous";
+          if (category.includes("clothing")) category = "Clothes";
+          const price = Number(product.price) || 0;
+          return {
+            id: product.id,
+            img: cleanImageUrl(product.image, category),
+            title: product.title || "Unnamed Product",
+            price,
+            category: category.charAt(0).toUpperCase() + category.slice(1),
+            description: product.description || "No description available",
+            rating: product.rating?.rate ? Math.round(product.rating.rate) : 4,
+            originalPrice: price * 1.3,
+            inStock: true,
+            brand: ["Hikvision", "Microsoft", "Generic", "Acer"][index % 4],
+            aosDelay: String(index * 100),
+          };
+        });
+
         setProducts(formattedProducts);
-        setLoading(false);
+        setBrandsFilter(
+          Object.fromEntries(
+            [...new Set(formattedProducts.map((p) => p.brand.toLowerCase()))].map((brand) => [brand, false])
+          )
+        );
       } catch (err) {
-        console.error('Error fetching products:', err);
+        setError(err.message);
+        toast.error("Failed to load products.");
+        setProducts([]);
+        setBrandsFilter({});
+      } finally {
         setLoading(false);
       }
     };
@@ -60,204 +82,252 @@ const SearchPage = ({  setCart, wishlist, setWishlist }) => {
     fetchProducts();
   }, []);
 
-  // تهيئة AOS
   useEffect(() => {
-    AOS.init({
-      duration: 800,
-      easing: 'ease-in-out',
-      offset: 100,
-      delay: 100,
-      once: true,
-      mirror: false,
-      anchorPlacement: 'top-bottom',
-    });
+    AOS.init({ duration: 800, easing: "ease-in-out", once: true });
   }, []);
 
-  // تصفية المنتجات بناءً على الفلاتر
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // تصفية بناءً على كلمة البحث
     if (searchQuery) {
-      result = result.filter((product) =>
-        product.title.toLowerCase().includes(searchQuery.toLowerCase())
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title.toLowerCase().includes(query) ||
+          p.description.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query)
       );
     }
 
-    // تصفية بناءً على السعر
-    result = result.filter(
-      (product) => product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
+    result = result.filter((p) => p.price * EXCHANGE_RATE >= priceRange[0] && p.price * EXCHANGE_RATE <= priceRange[1]);
 
-    // تصفية بناءً على حالة المخزون
     if (stockFilter.inStock || stockFilter.outOfStock) {
-      result = result.filter((product) => {
-        if (stockFilter.inStock && stockFilter.outOfStock) return true;
-        if (stockFilter.inStock) return product.inStock;
-        if (stockFilter.outOfStock) return !product.inStock;
-        return true;
-      });
-    }
-
-    // تصفية بناءً على العلامات التجارية
-    const selectedBrands = Object.keys(brandsFilter).filter(
-      (brand) => brandsFilter[brand]
-    );
-    if (selectedBrands.length > 0) {
-      result = result.filter((product) =>
-        selectedBrands.includes(product.brand.toLowerCase())
+      result = result.filter((p) =>
+        stockFilter.inStock && stockFilter.outOfStock ? true : stockFilter.inStock ? p.inStock : !p.inStock
       );
     }
 
-    // الترتيب
-    if (sortBy === 'price-low-high') {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-high-low') {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'rating') {
-      result.sort((a, b) => b.rating - a.rating);
+    const selectedBrands = Object.keys(brandsFilter).filter((brand) => brandsFilter[brand]);
+    if (selectedBrands.length > 0) {
+      result = result.filter((p) => selectedBrands.includes(p.brand.toLowerCase()));
     }
 
-    setFilteredProducts(result);
-    setCurrentPage(1); // إعادة تعيين الصفحة عند تغيير الفلاتر
+    switch (sortBy) {
+      case "price-low-high":
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high-low":
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case "rating":
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      default:
+        break;
+    }
+
+    return result;
   }, [products, searchQuery, priceRange, stockFilter, brandsFilter, sortBy]);
 
-  // تقسيم المنتجات إلى صفحات
   const totalItems = filteredProducts.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const paginatedProducts = showAllProducts
+    ? filteredProducts
+    : filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleViewDetails = (product) => {
-    console.log('View details for:', product);
-  };
-
-  const handleAddToCart = (product) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prevCart, { ...product, quantity: 1 }];
+    dispatch({
+      type: "recentlyViewed/add",
+      payload: [product, ...recentlyViewed.filter((item) => item.id !== product.id)].slice(0, 10),
     });
   };
 
-  const handleToggleWishlist = (product) => {
-    setWishlist((prevWishlist) => {
-      if (prevWishlist.some((item) => item.id === product.id)) {
-        return prevWishlist.filter((item) => item.id !== product.id);
-      }
-      return [...prevWishlist, product];
-    });
+  const handleAddToCart = (product, e) => {
+    e.preventDefault();
+    const existingItem = cart.find((item) => item.id === product.id);
+    const newProduct = {
+      ...product,
+      image: cleanImageUrl(product.img, product.category),
+      quantity: existingItem ? existingItem.quantity + 1 : 1,
+    };
+    dispatch(addToCart(newProduct));
+    toast.success(existingItem ? "Cart updated!" : "Added to cart!");
   };
+
+  const handleToggleWishlist = (product, e) => {
+    e.preventDefault();
+    const isInWishlist = wishlist.some((item) => item.id === product.id);
+    const newProduct = { ...product, image: cleanImageUrl(product.img, product.category) };
+    if (isInWishlist) {
+      dispatch(removeFromWishlist(product.id));
+      toast.info("Removed from wishlist!");
+    } else {
+      dispatch(addToWishlist(newProduct));
+      toast.success("Added to wishlist!");
+    }
+  };
+
+  const handleToggleShowAll = () => {
+    setShowAllProducts((prev) => !prev);
+    setCurrentPage(1); // Reset to first page when toggling
+  };
+
+  const resetFilters = () => {
+    setPriceRange([0, MAX_PRICE_EGP]);
+    setStockFilter({ inStock: false, outOfStock: false });
+    setBrandsFilter((prev) => Object.fromEntries(Object.keys(prev).map((k) => [k, false])));
+    setSearchParams({});
+    setCurrentPage(1);
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, priceRange, stockFilter, brandsFilter, sortBy, itemsPerPage]);
 
   return (
-    <div className="py-4 sm:py-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <div className="container justify-center  px-6 sm:px-6">
-        {/* Mobile Filter Toggle Button */}
-        <div className="lg:hidden mb-4">
+    <div className="py-6 sm:py-8 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+      <div className="container mx-auto px-2 sm:px-4">
+        {/* Filter Toggle for Mobile */}
+        <div
+          className="lg:hidden mb-4 sm:mb-6"
+          data-aos="fade-down"
+          data-aos-delay="50"
+          data-aos-duration="800"
+          data-aos-once="true"
+        >
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md w-full sm:w-auto"
-            aria-expanded={isFilterOpen}
-            aria-controls="filter-section"
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-md w-full sm:w-auto text-sm sm:text-base"
           >
-            <FaFilter className="w-5 h-5" />
-            <span>{isFilterOpen ? 'Hide Filters' : 'Show Filters'}</span>
+            <FaFilter className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>{isFilterOpen ? "Hide Filters" : "Show Filters"}</span>
           </button>
         </div>
 
+        {/* Main Layout */}
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-          {/* Filters Section */}
+          {/* Filter Panel */}
           <div
-            id="filter-section"
-            className={`w-full lg:w-1/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md transition-all duration-300 ${
-              isFilterOpen ? 'block' : 'hidden lg:block'
+            className={`w-full lg:w-1/4 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md ${
+              isFilterOpen ? "block" : "hidden lg:block"
             }`}
+            data-aos="fade-right"
+            data-aos-delay="150"
+            data-aos-duration="800"
+            data-aos-once="true"
           >
-            <h3 className="text-base sm:text-lg font-semibold mb-4">Filter By Price</h3>
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800 dark:text-gray-100">
+              Filter By Price
+            </h3>
             <div className="mb-4">
-              <input
-                type="range"
-                min="0"
-                max="74400"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([0, Number(e.target.value)])}
-                className="w-full"
-                aria-label="Price range filter"
-              />
+              <div className="relative">
+                <input
+                  type="range"
+                  min="0"
+                  max={MAX_PRICE_EGP}
+                  value={priceRange[0]}
+                  onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                  className="w-full accent-blue-500 mb-2"
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max={MAX_PRICE_EGP}
+                  value={priceRange[1]}
+                  onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                  className="w-full accent-blue-500"
+                />
+              </div>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Price: 740 EGP – {priceRange[1]} EGP
+                Price: {priceRange[0].toLocaleString()} EGP – {priceRange[1].toLocaleString()} EGP
               </p>
-              <button
-                className="mt-2 px-4 py-1 bg-primary text-white rounded-md hover:bg-blue-600 text-sm w-full sm:w-auto"
-                aria-label="Apply price filter"
-              >
-                Filter
-              </button>
             </div>
 
-            <h3 className="text-base sm:text-lg font-semibold mb-4">Filter By Stock Status</h3>
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 mt-4 sm:mt-6 text-gray-800 dark:text-gray-100">
+              Filter By Stock Status
+            </h3>
             <div className="space-y-2">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={stockFilter.inStock}
                   onChange={() => setStockFilter({ ...stockFilter, inStock: !stockFilter.inStock })}
-                  aria-label="Filter by in stock"
+                  className="accent-blue-500 w-4 h-4 sm:w-5 sm:h-5"
                 />
-                <span className="text-sm">In stock</span>
+                <span className="text-xs sm:text-sm">In stock</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={stockFilter.outOfStock}
                   onChange={() => setStockFilter({ ...stockFilter, outOfStock: !stockFilter.outOfStock })}
-                  aria-label="Filter by out of stock"
+                  className="accent-blue-500 w-4 h-4 sm:w-5 sm:h-5"
                 />
-                <span className="text-sm">Out of stock</span>
+                <span className="text-xs sm:text-sm">Out of stock</span>
               </label>
             </div>
 
-            <h3 className="text-base sm:text-lg font-semibold mb-4 mt-6">Brands</h3>
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 mt-4 sm:mt-6 text-gray-800 dark:text-gray-100">
+              Brands
+            </h3>
             <div className="space-y-2">
-              {Object.keys(brandsFilter).map((brand) => (
-                <label key={brand} className="flex items-center gap-2">
+              {Object.keys(brandsFilter).map((brand, index) => (
+                <label
+                  key={brand}
+                  className="flex items-center gap-2"
+                  data-aos="fade-up"
+                  data-aos-delay={String(200 + index * 100)}
+                  data-aos-duration="800"
+                  data-aos-once="true"
+                >
                   <input
                     type="checkbox"
                     checked={brandsFilter[brand]}
-                    onChange={() =>
-                      setBrandsFilter({ ...brandsFilter, [brand]: !brandsFilter[brand] })
-                    }
-                    aria-label={`Filter by ${brand}`}
+                    onChange={() => setBrandsFilter({ ...brandsFilter, [brand]: !brandsFilter[brand] })}
+                    className="accent-blue-500 w-4 h-4 sm:w-5 sm:h-5"
                   />
-                  <span className="text-sm">{brand.charAt(0).toUpperCase() + brand.slice(1)}</span>
+                  <span className="text-xs sm:text-sm">
+                    {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Search Results Section */}
+          {/* Search Results */}
           <div className="w-full lg:w-3/4">
-            <div className="flex sm:px-10 flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
-              <h2 className="text-lg sm:text-xl font-semibold">
-                Search results: "{searchQuery}"
+            <div
+              className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4"
+              data-aos="fade-down"
+              data-aos-delay="100"
+              data-aos-duration="800"
+              data-aos-once="true"
+            >
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">
+                Search results: "{searchQuery || "All Products"}"
               </h2>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchParams({})}
+                  className="px-3 py-1 sm:px-4 sm:py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm sm:text-base"
+                >
+                  Clear Search
+                </button>
+              )}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 <div className="flex items-center gap-2">
-                  <span className=" text-sm">Show:</span>
+                  <span className="text-xs sm:text-sm">Show:</span>
                   <div className="flex gap-1">
-                    {[9, 12, 18, 24].map((num) => (
+                    {[9, 12, 18, 24].map((num, index) => (
                       <button
                         key={num}
                         onClick={() => setItemsPerPage(num)}
                         className={`px-2 py-1 rounded-md text-xs sm:text-sm ${
-                          itemsPerPage === num ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700'
+                          itemsPerPage === num ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-gray-700"
                         }`}
-                        aria-label={`Show ${num} items per page`}
+                        data-aos="zoom-in"
+                        data-aos-delay={String(150 + index * 50)}
+                        data-aos-duration="800"
                       >
                         {num}
                       </button>
@@ -267,8 +337,10 @@ const SearchPage = ({  setCart, wishlist, setWishlist }) => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-sm w-full sm:w-auto"
-                  aria-label="Sort results"
+                  className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-xs sm:text-sm w-full sm:w-auto"
+                  data-aos="fade-down"
+                  data-aos-delay="300"
+                  data-aos-duration="800"
                 >
                   <option value="relevance">Relevance</option>
                   <option value="price-low-high">Price: Low to High</option>
@@ -278,68 +350,100 @@ const SearchPage = ({  setCart, wishlist, setWishlist }) => {
               </div>
             </div>
 
-            <div className="text-xs sm:px-10 sm:text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems}
+            <div
+              className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6"
+              data-aos="fade-up"
+              data-aos-delay="200"
+              data-aos-duration="800"
+              data-aos-once="true"
+            >
+              Showing {(currentPage - 1) * itemsPerPage + 1}-
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}
             </div>
 
             {loading ? (
-              <div className="text-center py-6">Loading...</div>
+              <div
+                className="text-center py-6"
+                data-aos="fade-in"
+                data-aos-delay="50"
+                data-aos-duration="800"
+                data-aos-once="true"
+              >
+                <FaSpinner className="animate-spin text-blue-500 w-6 h-6 sm:w-8 sm:h-8 mx-auto" />
+                <p className="mt-2 text-sm sm:text-base">Loading products...</p>
+              </div>
+            ) : error ? (
+              <div
+                className="text-center py-6 bg-white dark:bg-gray-800 rounded-lg"
+                data-aos="fade-in"
+                data-aos-delay="50"
+                data-aos-duration="800"
+                data-aos-once="true"
+              >
+                <p className="text-red-500 dark:text-red-400 text-base sm:text-lg">{error}</p>
+              </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-6">No products found.</div>
+              <div
+                className="text-center py-6 bg-white dark:bg-gray-800 rounded-lg"
+                data-aos="fade-up"
+                data-aos-delay="150"
+                data-aos-duration="800"
+                data-aos-once="true"
+              >
+                <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">
+                  No Results Found
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm sm:text-base">
+                  No products match your search query "{searchQuery}" or filters.
+                </p>
+                {searchQuery && (
+                  <div className="mt-4">
+                    <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm sm:text-base">Did you mean:</p>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      {["Shirt", "Clothes", "Electronics"].map((suggestion, index) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => setSearchParams({ query: suggestion })}
+                          className="px-3 py-1 bg-blue-500 text-white rounded-md text-xs sm:text-sm"
+                          data-aos="zoom-in"
+                          data-aos-delay={String(200 + index * 100)}
+                          data-aos-duration="800"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={resetFilters}
+                  className="mt-4 px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-md text-sm sm:text-base"
+                  data-aos="fade-up"
+                  data-aos-delay="350"
+                  data-aos-duration="800"
+                >
+                  Reset Filters
+                </button>
+              </div>
             ) : (
-              <div className="grid px-16 sm:px-16 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {paginatedProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onViewDetails={handleViewDetails}
-                    onAddToCart={handleAddToCart}
-                    onToggleWishlist={handleToggleWishlist}
-                    wishlist={wishlist}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-4 sm:mt-6 gap-1 sm:gap-2 flex-wrap">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm ${
-                      currentPage === page ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700'
-                    }`}
-                    aria-label={`Go to page ${page}`}
-                    aria-current={currentPage === page ? 'page' : undefined}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
+              <ProductCard
+                products={paginatedProducts}
+                onAddToCart={handleAddToCart}
+                onToggleWishlist={handleToggleWishlist}
+                onViewDetails={handleViewDetails}
+                wishlist={wishlist}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                onToggleShowAll={handleToggleShowAll}
+                showAllProducts={showAllProducts}
+              />
             )}
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-SearchPage.propTypes = {
-  cart: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      quantity: PropTypes.number.isRequired,
-    })
-  ).isRequired,
-  setCart: PropTypes.func.isRequired,
-  wishlist: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-    })
-  ).isRequired,
-  setWishlist: PropTypes.func.isRequired,
 };
 
 export default SearchPage;

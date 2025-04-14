@@ -1,32 +1,43 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 // components/RecentlyViewed/RecentlyViewed.jsx
-import ProductCard from "../ProductCard/ProductCard";
+import { useSelector, useDispatch } from 'react-redux';
+import ProductCard from '../ProductCard/ProductCard';
+import {
+  addToCart,
+  updateCartQuantity,
+  addToWishlist,
+  removeFromWishlist,
+  setCartPopup,
+} from '..//../Store/Store'; // Import from store.js
 
-const RecentlyViewed = ({ recentlyViewed, cart, setCart, wishlist, setWishlist, setCartPopup }) => {
+const RecentlyViewed = () => {
+  const dispatch = useDispatch();
+  const recentlyViewed = useSelector((state) => state.recentlyViewed.items); // Fix: .items
+  const cart = useSelector((state) => state.cart.items); // Fix: .items
+  const wishlist = useSelector((state) => state.wishlist.items); // Fix: .items
+
   const handleAddToCart = (product) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prevCart, { ...product, quantity: 1 }];
-    });
-    setCartPopup(true);
+    const existingItem = cart.find((item) => item.id === product.id);
+    if (existingItem) {
+      dispatch(updateCartQuantity({ id: product.id, quantity: existingItem.quantity + 1 }));
+    } else {
+      dispatch(addToCart({ ...product, quantity: 1 }));
+    }
+    dispatch(setCartPopup(true));
+    setTimeout(() => dispatch(setCartPopup(false)), 2000); // Matches Products.jsx behavior
   };
 
   const handleToggleWishlist = (product) => {
-    setWishlist((prevWishlist) => {
-      if (prevWishlist.some((item) => item.id === product.id)) {
-        return prevWishlist.filter((item) => item.id !== product.id);
-      }
-      return [...prevWishlist, product];
-    });
+    const isInWishlist = wishlist.some((item) => item.id === product.id);
+    if (isInWishlist) {
+      dispatch(removeFromWishlist(product.id));
+    } else {
+      dispatch(addToWishlist(product));
+    }
   };
 
-  if (recentlyViewed.length === 0) return null;
+  if (!recentlyViewed || recentlyViewed.length === 0) return null;
 
   return (
     <div className="py-6 sm:py-10">
@@ -39,9 +50,6 @@ const RecentlyViewed = ({ recentlyViewed, cart, setCart, wishlist, setWishlist, 
             <ProductCard
               key={product.id}
               product={product}
-              onAddToCart={handleAddToCart}
-              onToggleWishlist={handleToggleWishlist}
-              wishlist={wishlist}
             />
           ))}
         </div>
