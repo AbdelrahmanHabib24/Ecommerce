@@ -10,8 +10,7 @@ import { toast } from "react-toastify";
 import { addToCart } from "../../reducers/cartReducer";
 import { addToWishlist, removeFromWishlist } from "../../reducers/wishlistReducer";
 
-const EXCHANGE_RATE = 48;
-const MAX_PRICE_EGP = 74400;
+const MAX_PRICE_USD = 1000; // نطاق السعر الأقصى بالدولار بناءً على بيانات fakestoreapi
 
 const cleanImageUrl = (image) =>
   image?.trim()?.startsWith("http") ? image : "" || "";
@@ -20,14 +19,14 @@ const SearchPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [priceRange, setPriceRange] = useState([0, MAX_PRICE_EGP]);
+  const [priceRange, setPriceRange] = useState([0, MAX_PRICE_USD]);
   const [stockFilter, setStockFilter] = useState({ inStock: false, outOfStock: false });
   const [brandsFilter, setBrandsFilter] = useState({});
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [sortBy, setSortBy] = useState("relevance");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [showAllProducts, setShowAllProducts] = useState(false); // Added state for "Show All Products"
+  const [showAllProducts, setShowAllProducts] = useState(false);
 
   const dispatch = useDispatch();
   const wishlist = useSelector((state) => state.wishlist?.items || []);
@@ -86,6 +85,10 @@ const SearchPage = () => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
   }, []);
 
+  useEffect(() => {
+    AOS.refresh();
+  }, [isFilterOpen]);
+
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
@@ -99,7 +102,7 @@ const SearchPage = () => {
       );
     }
 
-    result = result.filter((p) => p.price * EXCHANGE_RATE >= priceRange[0] && p.price * EXCHANGE_RATE <= priceRange[1]);
+    result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
     if (stockFilter.inStock || stockFilter.outOfStock) {
       result = result.filter((p) =>
@@ -169,11 +172,11 @@ const SearchPage = () => {
 
   const handleToggleShowAll = () => {
     setShowAllProducts((prev) => !prev);
-    setCurrentPage(1); // Reset to first page when toggling
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
-    setPriceRange([0, MAX_PRICE_EGP]);
+    setPriceRange([0, MAX_PRICE_USD]);
     setStockFilter({ inStock: false, outOfStock: false });
     setBrandsFilter((prev) => Object.fromEntries(Object.keys(prev).map((k) => [k, false])));
     setSearchParams({});
@@ -196,8 +199,8 @@ const SearchPage = () => {
           data-aos-once="true"
         >
           <button
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-md w-full sm:w-auto text-sm sm:text-base"
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-md w-full sm:w-auto text-sm sm:text-base filter-toggle"
           >
             <FaFilter className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>{isFilterOpen ? "Hide Filters" : "Show Filters"}</span>
@@ -208,14 +211,24 @@ const SearchPage = () => {
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
           {/* Filter Panel */}
           <div
-            className={`w-full lg:w-1/4 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md ${
-              isFilterOpen ? "block" : "hidden lg:block"
-            }`}
+            className={`w-full lg:w-1/4 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md transition-all duration-300 ease-in-out filter-panel ${
+              isFilterOpen ? "block opacity-100 translate-y-0" : "hidden opacity-0 -translate-y-4"
+            } lg:block lg:opacity-100 lg:translate-y-0`}
             data-aos="fade-right"
             data-aos-delay="150"
             data-aos-duration="800"
             data-aos-once="true"
           >
+            {/* Close Button for Mobile */}
+            <div className="flex justify-end lg:hidden">
+              <button
+                onClick={() => setIsFilterOpen(false)}
+                className="text-blue-500 text-sm hover:underline"
+              >
+                Close
+              </button>
+            </div>
+
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800 dark:text-gray-100">
               Filter By Price
             </h3>
@@ -224,7 +237,7 @@ const SearchPage = () => {
                 <input
                   type="range"
                   min="0"
-                  max={MAX_PRICE_EGP}
+                  max={MAX_PRICE_USD}
                   value={priceRange[0]}
                   onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
                   className="w-full accent-blue-500 mb-2"
@@ -232,14 +245,14 @@ const SearchPage = () => {
                 <input
                   type="range"
                   min="0"
-                  max={MAX_PRICE_EGP}
+                  max={MAX_PRICE_USD}
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
                   className="w-full accent-blue-500"
                 />
               </div>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Price: {priceRange[0].toLocaleString()} EGP – {priceRange[1].toLocaleString()} EGP
+                Price: ${priceRange[0].toLocaleString()} – ${priceRange[1].toLocaleString()}
               </p>
             </div>
 
