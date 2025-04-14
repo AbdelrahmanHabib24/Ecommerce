@@ -97,6 +97,7 @@ const Products = () => {
 
   // Paginate products or show all
   const displayProducts = useMemo(() => {
+    if (!Array.isArray(filteredProducts)) return []; // فحص دفاعي
     if (showAllProducts) return filteredProducts;
     const start = (currentPage - 1) * PRODUCTS_PER_PAGE;
     return filteredProducts.slice(start, start + PRODUCTS_PER_PAGE);
@@ -141,7 +142,7 @@ const Products = () => {
   );
 
   return (
-    <div id="Products" className="py-4 sm:py-8 px-2  sm:px-4 container mx-auto">
+    <div className="py-4 sm:py-8 px-2 sm:px-4 container mx-auto">
       <div
         className="mb-4 sm:mb-6"
         data-aos="fade-down"

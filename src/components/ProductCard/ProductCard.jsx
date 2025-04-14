@@ -14,7 +14,7 @@ import {
 // Constants for configuration
 const CONFIG = {
   FALLBACK_IMAGE: "https://picsum.photos/180/220",
-  CARD_WIDTH: "100%", 
+  CARD_WIDTH: "100%", // تغيير إلى قيمة نسبية لتكون متجاوبة
   CARD_HEIGHT: "auto", 
   IMAGE_WIDTH: "100%", 
   IMAGE_HEIGHT: "220px", 
