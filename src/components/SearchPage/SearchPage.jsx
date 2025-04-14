@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 import { addToCart } from "../../reducers/cartReducer";
 import { addToWishlist, removeFromWishlist } from "../../reducers/wishlistReducer";
 
-const MAX_PRICE_USD = 1000; // نطاق السعر الأقصى بالدولار بناءً على بيانات fakestoreapi
+const MAX_PRICE_USD = 1000; 
 
 const cleanImageUrl = (image) =>
   image?.trim()?.startsWith("http") ? image : "" || "";
