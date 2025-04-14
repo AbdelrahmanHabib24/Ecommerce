@@ -6,10 +6,11 @@ import { fetchCategories } from "../../reducers/categoriesReducer";
 
 // Static images for the three categories
 const STATIC_IMAGES = [
-  "/public/electronics.avif", // Electronics
-  "/public/jewelry.jpg", // Jewelery
-  "/public/clothes.avif", // Clothes
+  "/electronics.avif",   // Electronics
+  "/jewelry.jpg",        // Jewelry
+  "/clothes.avif",       // Clothes
 ];
+
 
 const Categories = () => {
   const dispatch = useDispatch();
