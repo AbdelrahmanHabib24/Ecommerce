@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import AOS from "aos";
 import "aos/dist/aos.css";
 
 import ProductCard from "../ProductCard/ProductCard";
@@ -42,10 +41,7 @@ const Products = () => {
   const PRODUCTS_PER_PAGE = 5;
 
   // Initialize AOS
-  useEffect(() => {
-    AOS.init({ duration: 800, easing: "ease-in-out", once: true });
-  }, []);
-
+  
   // Fetch products if not already loaded
   useEffect(() => {
     if (!allProducts?.length && !loading && !error) {
@@ -142,7 +138,7 @@ const Products = () => {
   );
 
   return (
-    <div className="py-4 sm:py-8 px-2 sm:px-4 container mx-auto">
+    <div id="Products" className="py-4 sm:py-8 px-2 sm:px-4 container mx-auto">
       <div
         className="mb-4 sm:mb-6"
         data-aos="fade-down"

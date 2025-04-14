@@ -249,7 +249,7 @@ const SearchPage = () => {
   }, [searchQuery, priceRange, stockFilter, brandsFilter, sortBy, itemsPerPage]);
 
   return (
-    <div className="py-6 sm:py-8 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div className="py-6 sm:py-8 bg-white dark:bg-gray-900 overflow-hidden text-gray-900 dark:text-gray-100 min-h-screen">
       <div className="container mx-auto px-2 sm:px-4">
         {/* Filter Toggle for Mobile */}
         <div
