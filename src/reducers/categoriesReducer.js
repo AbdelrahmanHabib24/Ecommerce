@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const initialState = {
-  categories: [], // Array of category objects: [{ id: number|string, name: string, value: string }, ...]
+  categories: [], 
   loading: false,
   error: null,
 };

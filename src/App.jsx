@@ -40,11 +40,11 @@ const App = () => {
 
   return (
     <Router>
-      <div className="bg-white dark:bg-gray-900 dark:text-white min-h-screen flex flex-col">
+      <div className="bg-white dark:bg-gray-900 dark:text-white min-h-screen flex flex-col overflow-x-hidden">
         <Suspense fallback={<LoadingSpinner />}>
           <Navbar />
           <FloatingButtons cartLength={cartLength} wishlistLength={wishlistLength} dispatch={dispatch} />
-          <div className="flex-1">
+          <div className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
             <Routes>
               <Route path="/" element={<MainPage />} />
               <Route path="/shop" element={<Shop />} />
@@ -96,30 +96,30 @@ const FloatingButtons = ({ cartLength, wishlistLength, dispatch }) => {
 
   return (
     <nav
-      className="fixed right-4 top-20 z-50 flex flex-col space-y-4"
+      className="fixed right-4 top-20 z-50 flex flex-col gap-4 sm:gap-5"
       data-aos="fade-left"
       data-aos-delay="300"
     >
       <button
         onClick={() => handleOpenPopup("CART")}
-        className="p-3 bg-blue-500 text-white rounded-full relative hover:scale-110 transition-transform"
+        className="p-3 sm:p-4 bg-blue-500 text-white rounded-full relative hover:scale-110 transition-transform"
         aria-label={`Open cart with ${cartLength} items`}
       >
-        <FaShoppingCart className="w-6 h-6" />
+        <FaShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
         {cartLength > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {cartLength}
           </span>
         )}
       </button>
       <button
         onClick={() => handleOpenPopup("WISHLIST")}
-        className="p-3 bg-purple-500 text-white rounded-full relative hover:scale-110 transition-transform"
+        className="p-3 sm:p-4 bg-purple-500 text-white rounded-full relative hover:scale-110 transition-transform"
         aria-label={`Open wishlist with ${wishlistLength} items`}
       >
-        <FaHeart className="w-6 h-6" />
+        <FaHeart className="w-5 h-5 sm:w-6 sm:h-6" />
         {wishlistLength > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {wishlistLength}
           </span>
         )}
@@ -128,24 +128,19 @@ const FloatingButtons = ({ cartLength, wishlistLength, dispatch }) => {
   );
 };
 
-
-
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center min-h-[200px]">
-    <div
-      className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"
-      data-aos="fade-in"
-    />
+    <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-blue-500 border-t-transparent" />
   </div>
 );
 
 const NotFound = () => (
   <div
-    className="flex flex-col items-center justify-center min-h-[200px] text-center"
+    className="flex flex-col items-center justify-center py-20 text-center px-4 sm:px-0"
     data-aos="fade-up"
     data-aos-delay="100"
   >
-    <h2 className="text-2xl font-bold mb-2">404 - Page Not Found</h2>
+    <h2 className="text-xl sm:text-2xl font-bold mb-2">404 - Page Not Found</h2>
     <p className="text-gray-500">The page you're looking for doesn't exist.</p>
   </div>
 );
