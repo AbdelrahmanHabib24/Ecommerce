@@ -40,11 +40,11 @@ const App = () => {
 
   return (
     <Router>
-      <div className="bg-white dark:bg-gray-900 dark:text-white min-h-screen flex flex-col overflow-x-hidden">
+      <div className="bg-white dark:bg-gray-900 dark:text-white min-h-screen flex flex-col overflow-x-hidden ">
         <Suspense fallback={<LoadingSpinner />}>
           <Navbar />
           <FloatingButtons cartLength={cartLength} wishlistLength={wishlistLength} dispatch={dispatch} />
-          <div className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex-1 w-full  mx-auto  ">
             <Routes>
               <Route path="/" element={<MainPage />} />
               <Route path="/shop" element={<Shop />} />
