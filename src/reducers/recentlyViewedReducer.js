@@ -1,13 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { safeParse } from '../utils/safeParse';
 
 const recentlyViewedSlice = createSlice({
   name: 'recentlyViewed',
-  initialState: { items: safeParse('recentlyViewed') },
+  initialState: { items: [] },
   reducers: {
     setRecentlyViewed(state, action) {
       state.items = action.payload;
-      localStorage.setItem('recentlyViewed', JSON.stringify(state.items));
     },
   },
 });
