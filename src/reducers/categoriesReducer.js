@@ -1,18 +1,23 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
+const STATIC_IMAGES = ["/electronics.avif", "/jewelry.jpg", "/clothes.avif"];
 
 const initialState = {
-  categories: [], 
+  categories: [],
+  formattedCategories: [],
   loading: false,
   error: null,
 };
 
 export const fetchCategories = createAsyncThunk(
-  'categories/fetchCategories',
-  async ({ limit = 3 } = {}, { rejectWithValue }) => {
+  "categories/fetchCategories",
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`https://fakestoreapi.com/products/categories?limit=${limit}`);
+      const response = await fetch(
+        `https://fakestoreapi.com/products/categories`
+      );
       if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+        throw new Error("Failed to fetch categories");
       }
       const data = await response.json();
 
@@ -27,12 +32,24 @@ export const fetchCategories = createAsyncThunk(
   }
 );
 
+function formatCategories(categories) {
+  return categories.slice(0, 3).map((cat, i) => ({
+    ...cat,
+    img: STATIC_IMAGES[i],
+    name: ["men's clothing", "women's clothing"].includes(cat.name)
+      ? "Clothes"
+      : cat.name.charAt(0).toUpperCase() + cat.name.slice(1).toLowerCase(),
+    aosDelay: String(i * 200),
+  }));
+}
+
 const categoriesSlice = createSlice({
-  name: 'categories',
+  name: "categories",
   initialState,
   reducers: {
     setCategories(state, action) {
       state.categories = action.payload;
+      state.formattedCategories = formatCategories(action.payload);
       state.loading = false;
       state.error = null;
     },
@@ -45,12 +62,13 @@ const categoriesSlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.categories = action.payload;
+        state.formattedCategories = formatCategories(action.payload); 
         state.loading = false;
         state.error = null;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to fetch categories';
+        state.error = action.payload || "Failed to fetch categories";
       });
   },
 });

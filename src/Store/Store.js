@@ -1,7 +1,13 @@
 // src/Store/Store.js
-import { configureStore } from '@reduxjs/toolkit';
-import { thunk } from 'redux-thunk'; // ✅ هنا
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import {
+  persistStore,
+  persistReducer,
+} from 'redux-persist';
+import storage from 'redux-persist/lib/storage'; 
 
+
+// Reducers
 import cartReducer from '../reducers/cartReducer';
 import wishlistReducer from '../reducers/wishlistReducer';
 import productsReducer from '../reducers/productsReducer';
@@ -10,25 +16,31 @@ import recentlyViewedReducer from '../reducers/recentlyViewedReducer';
 import popupsReducer from '../reducers/popupsReducer';
 import categoriesReducer from '../reducers/categoriesReducer';
 
-export const store = configureStore({
-  reducer: {
-    cart: cartReducer,
-    wishlist: wishlistReducer,
-    products: productsReducer,
-    filters: filtersReducer,
-    recentlyViewed: recentlyViewedReducer,
-    popups: popupsReducer,
-    categories: categoriesReducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(thunk), // ✅
+// Combine reducers
+export const rootReducer = combineReducers({
+  cart: cartReducer,
+  wishlist: wishlistReducer,
+  products: productsReducer,
+  filters: filtersReducer,
+  recentlyViewed: recentlyViewedReducer,
+  popups: popupsReducer,
+  categories: categoriesReducer,
 });
 
+const persistConfig = {
+  key: 'root',
+  storage,
+  blacklist: ['products'] 
+};
 
-export * from '../reducers/cartReducer';
-export * from '../reducers/wishlistReducer';
-export * from '../reducers/productsReducer';
-export * from '../reducers/filtersReducer';
-export * from '../reducers/recentlyViewedReducer';
-export * from '../reducers/popupsReducer';
-export * from '../reducers/categoriesReducer';
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+export const store = configureStore({
+  reducer: persistedReducer,
+  
+});
+
+export const persistor = persistStore(store);
+
+

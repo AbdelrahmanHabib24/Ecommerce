@@ -1,282 +1,204 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react/prop-types */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { addToCart } from "@/redux/slices/cartSlice";
+import { setCategory, setSortBy } from "@/redux/slices/filterSlice";
 import { toast } from "react-toastify";
 import CartPopup from "@/components/shared/CartPopup";
 import Pagination from "@/components/shared/Pagination";
 import ProductCard from "@/components/product/ProductCard";
 import LazyImage from "@/components/shared/LazyImage";
-import { setCategory, setSortBy } from "@/redux/slices/filterSlice";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-// Constants
 const ProductList = ({ products }) => {
   const dispatch = useDispatch();
   const { selectedCategory } = useSelector((state) => state.filters);
-  const [showPopup, setShowPopup] = useState(false);
   const [popupProduct, setPopupProduct] = useState(null);
   const [sortOption, setSortOption] = useState("default");
   const [paginationMode, setPaginationMode] = useState("pagination");
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage, setProductsPerPage] = useState(12);
-  const [visibleProducts, setVisibleProducts] = useState(productsPerPage);
+  const [visibleProducts, setVisibleProducts] = useState(12);
 
-  // Initialize AOS
+  // Init AOS
   useEffect(() => {
     AOS.init({ duration: 800, easing: "ease-in-out", once: true });
   }, []);
 
-  // Normalize product images
-  const normalizedProducts = useMemo(
-    () =>
-      products.map((product) => ({
-        ...product,
-        img: product.img || product.image,
-      })),
-    [products]
-  );
+  const processedProducts = useMemo(() => {
+    let result = products.map((p) => ({ ...p, img: p.img || p.image }));
 
-  // Filter products by category
-  const filteredProducts = useMemo(
-    () =>
-      selectedCategory === ""
-        ? normalizedProducts
-        : normalizedProducts.filter(
-            (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
-          ),
-    [normalizedProducts, selectedCategory]
-  );
+    if (selectedCategory) {
+      result = result.filter(
+        (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
 
-  // Sort products
-  const sortedProducts = useMemo(() => {
-    const sorted = [...filteredProducts];
-    if (sortOption === "price-asc") sorted.sort((a, b) => a.price - b.price);
-    else if (sortOption === "price-desc") sorted.sort((a, b) => b.price - a.price);
-    else if (sortOption === "rating") sorted.sort((a, b) => (b.rating?.rate || 0) - (a.rating?.rate || 0));
-    return sorted;
-  }, [filteredProducts, sortOption]);
+    if (sortOption === "price-asc") result.sort((a, b) => a.price - b.price);
+    if (sortOption === "price-desc") result.sort((a, b) => b.price - a.price);
+    if (sortOption === "rating")
+      result.sort((a, b) => (b.rating?.rate || 0) - (a.rating?.rate || 0));
 
-  // Paginate or infinite scroll products
+    return result;
+  }, [products, selectedCategory, sortOption]);
+
   const paginatedProducts = useMemo(() => {
     if (paginationMode === "pagination") {
       const start = (currentPage - 1) * productsPerPage;
-      return sortedProducts.slice(start, start + productsPerPage);
+      return processedProducts.slice(start, start + productsPerPage);
     }
-    return sortedProducts.slice(0, visibleProducts);
-  }, [sortedProducts, currentPage, productsPerPage, paginationMode, visibleProducts]);
+    return processedProducts.slice(0, visibleProducts);
+  }, [processedProducts, paginationMode, currentPage, productsPerPage, visibleProducts]);
 
   // Handlers
   const handleAddToCart = (product) => {
-    const normalizedProduct = { ...product };
-    dispatch(addToCart(normalizedProduct));
-    setPopupProduct(normalizedProduct);
-    setShowPopup(true);
-    toast.success(`${product.title} تمت إضافته إلى السلة.`);
+    dispatch(addToCart(product));
+    setPopupProduct(product);
+    toast.success(`${product.title} added to cart.`);
   };
 
-  const handleSortChange = (e) => {
-    const selected = e.target.value;
-    setSortOption(selected);
-    dispatch(setSortBy(selected));
+  const handleScroll = () => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop + 100 >=
+      document.documentElement.scrollHeight
+    ) {
+      setVisibleProducts((prev) => prev + productsPerPage);
+    }
   };
 
-  const handleCategoryChange = (e) => dispatch(setCategory(e.target.value));
-
-  const handlePaginationModeChange = (e) => setPaginationMode(e.target.value);
-
-  const handleProductsPerPageChange = (e) => {
-    setProductsPerPage(parseInt(e.target.value, 10));
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // Infinite scroll effect
   useEffect(() => {
     if (paginationMode !== "infinite") return;
-
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop + 100 >=
-        document.documentElement.scrollHeight
-      ) {
-        setVisibleProducts((prev) => prev + productsPerPage);
-      }
-    };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [paginationMode, productsPerPage]);
 
   return (
     <div className="py-4 sm:py-8 px-2 sm:px-4 container mx-auto">
-      {/* Filters Section */}
+      {/* Filters */}
       <div
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 bg-gray-100 dark:bg-gray-800 p-3 sm:p-4 rounded-lg shadow-md"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md"
         data-aos="fade-down"
-        data-aos-delay="50"
-        data-aos-duration="800"
-        data-aos-once="true"
       >
-        <div className="w-full sm:w-auto">
-          <label
-            htmlFor="category"
-            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            التصنيف:
-          </label>
-          <select
-            id="category"
-            value={selectedCategory}
-            onChange={handleCategoryChange}
-            className="w-full sm:w-40 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
-            data-aos="fade-down"
-            data-aos-delay="150"
-            data-aos-duration="800"
-          >
-            <option value="">كل التصنيفات</option>
-            <option value="electronics">الكترونيات</option>
-            <option value="jewelery">مجوهرات</option>
-            <option value="men's clothing">ملابس رجالي</option>
-            <option value="women's clothing">ملابس حريمي</option>
-          </select>
-        </div>
-
-        <div className="w-full sm:w-auto">
-          <label
-            htmlFor="sort"
-            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            الترتيب:
-          </label>
-          <select
-            id="sort"
-            value={sortOption}
-            onChange={handleSortChange}
-            className="w-full sm:w-48 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
-            data-aos="fade-down"
-            data-aos-delay="250"
-            data-aos-duration="800"
-          >
-            <option value="default">الافتراضي</option>
-            <option value="price-asc">السعر: من الأقل للأعلى</option>
-            <option value="price-desc">السعر: من الأعلى للأقل</option>
-            <option value="rating">الأعلى تقييماً</option>
-          </select>
-        </div>
-
-        <div className="w-full sm:w-auto">
-          <label
-            htmlFor="paginationMode"
-            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            وضع الصفحات:
-          </label>
-          <select
-            id="paginationMode"
-            value={paginationMode}
-            onChange={handlePaginationModeChange}
-            className="w-full sm:w-40 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
-            data-aos="fade-down"
-            data-aos-delay="350"
-            data-aos-duration="800"
-          >
-            <option value="pagination">تقسيم الصفحات</option>
-            <option value="infinite">تمرير لا نهائي</option>
-          </select>
-        </div>
-
-        <div className="w-full sm:w-auto">
-          <label
-            htmlFor="productsPerPage"
-            className="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            عدد المنتجات لكل صفحة:
-          </label>
-          <select
-            id="productsPerPage"
-            value={productsPerPage}
-            onChange={handleProductsPerPageChange}
-            className="w-full sm:w-24 px-2 py-1 sm:px-3 sm:py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
-            data-aos="fade-down"
-            data-aos-delay="450"
-            data-aos-duration="800"
-          >
-            <option value={6}>6</option>
-            <option value={12}>12</option>
-            <option value={24}>24</option>
-          </select>
-        </div>
+        <Filter
+          label="Category"
+          value={selectedCategory}
+          onChange={(e) => dispatch(setCategory(e.target.value))}
+          options={[
+            { value: "", label: "All Categories" },
+            { value: "electronics", label: "Electronics" },
+            { value: "jewelery", label: "Jewelery" },
+            { value: "men's clothing", label: "Men's Clothing" },
+            { value: "women's clothing", label: "Women's Clothing" },
+          ]}
+        />
+        <Filter
+          label="Sort By"
+          value={sortOption}
+          onChange={(e) => {
+            setSortOption(e.target.value);
+            dispatch(setSortBy(e.target.value));
+          }}
+          options={[
+            { value: "default", label: "Default" },
+            { value: "price-asc", label: "Price: Low to High" },
+            { value: "price-desc", label: "Price: High to Low" },
+            { value: "rating", label: "Top Rated" },
+          ]}
+        />
+        <Filter
+          label="Display Mode"
+          value={paginationMode}
+          onChange={(e) => setPaginationMode(e.target.value)}
+          options={[
+            { value: "pagination", label: "Pagination" },
+            { value: "infinite", label: "Infinite Scroll" },
+          ]}
+        />
+        <Filter
+          label="Products per Page"
+          value={productsPerPage}
+          onChange={(e) => {
+            setProductsPerPage(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+          options={[
+            { value: 6, label: "6" },
+            { value: 12, label: "12" },
+            { value: 24, label: "24" },
+          ]}
+        />
       </div>
 
-      {/* Products Grid */}
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
-        data-aos="fade-up"
-        data-aos-delay="150"
-        data-aos-duration="800"
-        data-aos-once="true"
-      >
+      {/* Products */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6" data-aos="fade-up">
         {paginatedProducts.length > 0 ? (
-          paginatedProducts.map((product, index) => (
+          paginatedProducts.map((product, i) => (
             <div
               key={product.id}
               data-aos="fade-up"
-              data-aos-delay={String(200 + index * 100)}
-              data-aos-duration="800"
-              data-aos-once="true"
+              data-aos-delay={String(200 + i * 100)}
             >
-              <ProductCard product={product} LazyImage={LazyImage} onAddToCart={handleAddToCart} />
+              <ProductCard
+                product={product}
+                LazyImage={LazyImage}
+                onAddToCart={handleAddToCart}
+              />
             </div>
           ))
         ) : (
-          <div
-            className="col-span-full text-center py-6"
-            data-aos="fade-up"
-            data-aos-delay="150"
-            data-aos-duration="800"
-            data-aos-once="true"
-          >
-            <p className="text-gray-500 text-sm sm:text-base">لا توجد منتجات تطابق هذا التصنيف.</p>
+          <div className="col-span-full text-center py-6 text-gray-500">
+            No products found.
           </div>
         )}
       </div>
 
       {/* Pagination */}
-      {paginationMode === "pagination" && sortedProducts.length > 0 && (
-        <div
-          className="mt-4 sm:mt-6"
-          data-aos="fade-up"
-          data-aos-delay="600"
-          data-aos-duration="800"
-          data-aos-once="true"
-        >
+      {paginationMode === "pagination" && processedProducts.length > 0 && (
+        <div className="mt-6">
           <Pagination
             currentPage={currentPage}
             productsPerPage={productsPerPage}
-            totalProducts={sortedProducts.length}
-            paginate={handlePageChange}
+            totalProducts={processedProducts.length}
+            paginate={(page) => {
+              setCurrentPage(page);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
           />
         </div>
       )}
 
       {/* Cart Popup */}
-      {showPopup && popupProduct && (
-        <div
-          data-aos="zoom-in"
-          data-aos-delay="50"
-          data-aos-duration="800"
-          data-aos-once="true"
-        >
-          <CartPopup product={popupProduct} onClose={() => setShowPopup(false)} />
-        </div>
+      {popupProduct && (
+        <CartPopup product={popupProduct} onClose={() => setPopupProduct(null)} />
       )}
     </div>
   );
 };
+
+// Filter component
+const Filter = ({ label, value, onChange, options }) => (
+  <div className="w-full sm:w-auto">
+    <label
+      htmlFor={label}
+      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+    >
+      {label}:
+    </label>
+    <select
+      id={label}
+      value={value}
+      onChange={onChange}
+      className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
 
 export default ProductList;

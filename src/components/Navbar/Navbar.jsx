@@ -7,7 +7,7 @@ import Logo from "../../assets/logo.png";
 import { IoMdSearch, IoMdMenu, IoMdClose } from "react-icons/io";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import DarkMode from "./DarkMode";
-import { setCartPopup, setWishlistPopup } from "../../Store/Store";
+import { setCartPopup, setWishlistPopup } from "../../reducers/popupsReducer";
 
 // Menu items
 const Menu = [

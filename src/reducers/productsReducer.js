@@ -1,8 +1,8 @@
 // src/reducers/productsReducer.js
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 const PRODUCTS_PER_PAGE = 5;
-const API_URL = 'https://fakestoreapi.com/products';
+const API_URL = "https://fakestoreapi.com/products";
 
 const initialState = {
   products: [],
@@ -25,7 +25,7 @@ const paginate = (all, page, perPage) => {
 
 // Thunk to fetch all products
 export const fetchProducts = createAsyncThunk(
-  'products/fetchProducts',
+  "products/fetchProducts",
   async ({ signal } = {}, { rejectWithValue }) => {
     try {
       const response = await fetch(API_URL, { signal });
@@ -35,8 +35,8 @@ export const fetchProducts = createAsyncThunk(
       const data = await response.json();
       return { products: data, total: data.length };
     } catch (error) {
-      if (error.name === 'AbortError') {
-        return rejectWithValue('Fetch aborted');
+      if (error.name === "AbortError") {
+        return rejectWithValue("Fetch aborted");
       }
       return rejectWithValue(error.message);
     }
@@ -44,7 +44,7 @@ export const fetchProducts = createAsyncThunk(
 );
 
 const productsSlice = createSlice({
-  name: 'products',
+  name: "products",
   initialState,
   reducers: {
     setSelectedProduct(state, action) {
@@ -58,7 +58,7 @@ const productsSlice = createSlice({
       state.currentPage = page;
       state.products = paginate(state.allProducts, page, state.productsPerPage);
     },
-    setError(state, action) { // Added setError reducer
+    setError(state, action) {
       state.error = action.payload;
     },
     clearError(state) {
@@ -81,14 +81,41 @@ const productsSlice = createSlice({
       .addCase(fetchProducts.fulfilled, (state, action) => {
         const { products, total } = action.payload;
         state.loading = false;
-        state.allProducts = products;
+
+        const enhancedProducts = products.map((p) => {
+          const price = p.price;
+          const originalPrice = +(price * 1.2).toFixed(2);
+          const discount = Math.round(
+            ((originalPrice - price) / originalPrice) * 100
+          );
+
+          const rating = (Math.random() * (5 - 3) + 3).toFixed(1);
+
+          const inStock = Math.random() > 0.3;
+
+          return {
+            ...p,
+            price,
+            originalPrice,
+            discount,
+            rating,
+            inStock,
+          };
+        });
+
+        state.allProducts = enhancedProducts;
         state.totalProducts = total;
-        state.products = paginate(products, state.currentPage, state.productsPerPage);
+        state.products = paginate(
+          state.allProducts,
+          state.currentPage,
+          state.productsPerPage
+        );
         state.lastFetched = Date.now();
       })
+
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to fetch products';
+        state.error = action.payload || "Failed to fetch products";
       });
   },
 });
@@ -98,7 +125,7 @@ export const {
   setSelectedProduct,
   setProductModalOpen,
   setCurrentPage,
-  setError, // Export the new action
+  setError,
   clearError,
   resetProducts,
 } = productsSlice.actions;
@@ -114,5 +141,6 @@ export const selectCurrentPage = (state) => state.products.currentPage;
 export const selectTotalPages = (state) =>
   Math.ceil(state.products.totalProducts / state.products.productsPerPage);
 export const selectSelectedProduct = (state) => state.products.selectedProduct;
-export const selectProductModalOpen = (state) => state.products.productModalOpen;
+export const selectProductModalOpen = (state) =>
+  state.products.productModalOpen;
 export const selectTotalProducts = (state) => state.products.totalProducts;

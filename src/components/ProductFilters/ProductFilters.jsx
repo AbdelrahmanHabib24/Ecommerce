@@ -1,29 +1,20 @@
 /* eslint-disable react/prop-types */
-import { memo, useCallback, useState } from "react";
+import {  useState } from "react";
 import { useSelector } from "react-redux";
 import { FaFilter } from "react-icons/fa";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
-const sliderStyles = {
-  rail: { light: "#e5e7eb", dark: "#4b5563" },
-  track: { light: "#3b82f6", dark: "#60a5fa" },
+const sliderStyles = (isDark) => ({
+  rail: { backgroundColor: isDark ? "#4b5563" : "#e5e7eb" },
+  track: { backgroundColor: isDark ? "#60a5fa" : "#3b82f6" },
   handle: {
-    light: { borderColor: "#3b82f6", backgroundColor: "#ffffff" },
-    dark: { borderColor: "#60a5fa", backgroundColor: "#1f2937" },
+    borderColor: isDark ? "#60a5fa" : "#3b82f6",
+    backgroundColor: isDark ? "#1f2937" : "#ffffff",
   },
-};
-
-const capitalize = (str) => {
-  if (!str) return "";
-  return str
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-};
+});
 
 const defaultCategories = [
-  { id: "all", name: "All Categories", value: "" },
   { id: "electronics", name: "Electronics", value: "electronics" },
   { id: "jewelery", name: "Jewelery", value: "jewelery" },
   { id: "mens-clothing", name: "Men's Clothing", value: "men's clothing" },
@@ -31,35 +22,34 @@ const defaultCategories = [
 ];
 
 const ProductFilters = ({
-  categoryFilter = "",
+  categoryFilter,
   setCategoryFilter,
-  priceRange = [0, 1000],
+  priceRange,
   setPriceRange,
-  ratingFilter = 0,
+  ratingFilter,
   setRatingFilter,
-  
 }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const isDarkMode = document.documentElement.classList.contains("dark");
-  const { categories: reduxCategories, loading, error } = useSelector((state) => state.categories);
 
-  const categories = reduxCategories?.length > 0 ? reduxCategories : defaultCategories;
+const { categories: reduxCategories = [], loading = false, error = null } =
+  useSelector((state) => state.categories || {});
 
-  const handleCategoryChange = useCallback(
-    (e) => {
-      const value = e.target.value;
-      console.log("ProductFilters: Category changed to:", value);
-      setCategoryFilter(value);
-    },
-    [setCategoryFilter]
-  );
+const categories = [
+  { id: "all", name: "All Categories", value: "" },
+  ...(reduxCategories.length ? reduxCategories : defaultCategories),
+];
+
+
+  const styles = sliderStyles(isDarkMode);
 
   return (
     <div className="mb-6 px-4 sm:px-0">
+      {/* Mobile filter button */}
       <div className="md:hidden mb-4">
         <button
           onClick={() => setIsFilterOpen(!isFilterOpen)}
-          className="flex items-center gap-2 px-4 py-2  bg-blue-500 text-white rounded-md w-full hover:bg-blue-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md w-full hover:bg-blue-600 transition-colors"
           aria-expanded={isFilterOpen}
           aria-controls="filter-panel"
         >
@@ -68,48 +58,47 @@ const ProductFilters = ({
         </button>
       </div>
 
+      {/* Filter Panel */}
       <div
         id="filter-panel"
-        className={`flex flex-col md:flex-row md:items-center place-content-center sm:gap-2 lg:gap-16 space-y-4 md:space-y-0 md:space-x-6 ${
+        className={`flex flex-col md:flex-row md:items-center justify-center sm:gap-2 lg:gap-16 space-y-4 md:space-y-0 md:space-x-6 ${
           isFilterOpen ? "block" : "hidden md:flex"
         }`}
         role="region"
-        aria-labelledby="filter-heading"
       >
+        {/* Category Filter */}
         <div className="w-full md:w-1/4 flex items-center space-x-2">
-          <FaFilter className="text-gray-600 dark:text-gray-300 flex-shrink-0" aria-hidden="true" />
+          <FaFilter
+            className="text-gray-600 dark:text-gray-300 flex-shrink-0"
+            aria-hidden="true"
+          />
           <div className="w-full">
-            {loading ? (
+            {loading && (
               <div className="px-3 py-2 text-gray-500 dark:text-gray-400 animate-pulse">
                 Loading categories...
               </div>
-            ) : error ? (
+            )}
+            {error && (
               <div className="px-3 py-2 text-red-500 dark:text-red-400">{error}</div>
-            ) : categories.length > 0 ? (
+            )}
+            {!loading && !error && (
               <select
                 className="w-full border rounded-lg px-3 py-2 bg-white text-gray-700 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:focus:ring-blue-400 transition-colors"
                 value={categoryFilter}
-                onChange={handleCategoryChange}
+                onChange={(e) => setCategoryFilter(e.target.value)}
                 aria-label="Select product category"
-                disabled={loading}
               >
-                <option value="">All Categories</option>
-                {categories
-                  .filter((category) => category.value !== "") // Exclude "All Categories" since it's hardcoded above
-                  .map((category) => (
-                    <option key={category.id} value={category.value}>
-                      {capitalize(category.name)}
-                    </option>
-                  ))}
+                {categories.map((category) => (
+                  <option key={category.id} value={category.value}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
-            ) : (
-              <div className="px-3 py-2 text-gray-500 dark:text-gray-400">
-                No categories available.
-              </div>
             )}
           </div>
         </div>
 
+        {/* Price Range Filter */}
         <div className="w-full md:w-1/3">
           <label
             htmlFor="price-range"
@@ -124,16 +113,13 @@ const ProductFilters = ({
             max={1000}
             value={priceRange}
             onChange={setPriceRange}
-            trackStyle={[{ backgroundColor: isDarkMode ? sliderStyles.track.dark : sliderStyles.track.light }]}
-            handleStyle={[
-              { ...(isDarkMode ? sliderStyles.handle.dark : sliderStyles.handle.light) },
-              { ...(isDarkMode ? sliderStyles.handle.dark : sliderStyles.handle.light) },
-            ]}
-            railStyle={{ backgroundColor: isDarkMode ? sliderStyles.rail.dark : sliderStyles.rail.light }}
-            aria-label={`Price range from ${priceRange[0]} to ${priceRange[1]} dollars`}
+            trackStyle={[styles.track]}
+            handleStyle={[styles.handle, styles.handle]}
+            railStyle={styles.rail}
           />
         </div>
 
+        {/* Rating Filter */}
         <div className="w-full md:w-1/4">
           <label
             htmlFor="rating-filter"
@@ -148,10 +134,9 @@ const ProductFilters = ({
             step={1}
             value={ratingFilter}
             onChange={setRatingFilter}
-            trackStyle={[{ backgroundColor: isDarkMode ? sliderStyles.track.dark : sliderStyles.track.light }]}
-            handleStyle={[{ ...(isDarkMode ? sliderStyles.handle.dark : sliderStyles.handle.light) }]}
-            railStyle={{ backgroundColor: isDarkMode ? sliderStyles.rail.dark : sliderStyles.rail.light }}
-            aria-label={`Minimum rating of ${ratingFilter} stars`}
+            trackStyle={[styles.track]}
+            handleStyle={[styles.handle]}
+            railStyle={styles.rail}
           />
         </div>
       </div>
@@ -159,8 +144,4 @@ const ProductFilters = ({
   );
 };
 
-
-
-
-
-export default memo(ProductFilters);
+export default (ProductFilters);

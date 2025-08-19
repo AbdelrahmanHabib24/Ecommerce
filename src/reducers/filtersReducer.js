@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const initialState = {
-  categoryFilter: "", // Changed from "All" to "" to align with ProductFilters
+  categoryFilter: "", 
   priceRange: [0, 1000],
   ratingFilter: 0,
   sortBy: "default",
