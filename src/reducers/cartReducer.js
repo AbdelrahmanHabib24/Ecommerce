@@ -2,14 +2,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 
-const normalizeCart = (cart) =>
-  cart.map((item) => ({
-    ...item,
-    img:
-      item.img ||
-      item.image ||
-      item.categoryImage 
-  }));
+
 
 const initialState = {
   items: [],
@@ -52,12 +45,12 @@ const cartSlice = createSlice({
     },
 
     setCart(state, action) {
-      state.items = normalizeCart(action.payload);
+      state.items = (action.payload);
     },
   },
 });
 
-export const selectCartItems = (state) => normalizeCart(state.cart?.items ?? []);
+export const selectCartItems = (state) => (state.cart?.items ?? []);
 
 export const {
   addToCart,

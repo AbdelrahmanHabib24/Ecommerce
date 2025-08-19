@@ -28,7 +28,7 @@ const ProductList = ({ products }) => {
   }, []);
 
   const processedProducts = useMemo(() => {
-    let result = products.map((p) => ({ ...p, img: p.img || p.image }));
+    let result = products;
 
     if (selectedCategory) {
       result = result.filter(

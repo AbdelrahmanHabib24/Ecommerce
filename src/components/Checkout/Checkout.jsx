@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { useState, useMemo, useCallback } from "react";
@@ -9,7 +10,6 @@ import {
   removeFromCart,
   updateCartQuantity,
   clearCart,
-  selectCartItems,
 } from "../../reducers/cartReducer";
 
 const COUPON_CODES = { DISCOUNT10: 0.1 };
@@ -292,8 +292,7 @@ const CheckoutForm = ({ details, onChange, loading }) => {
 const Checkout = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const cart = useSelector(selectCartItems);
-
+  const cart = useSelector((state) => state.cart?.items ?? []);
   const [details, setDetails] = useState({
     firstName: "",
     lastName: "",

@@ -91,7 +91,6 @@ const ProductDetails = () => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(true);
 
-  // -------- Product & Related Products from Redux --------
  const location = useLocation();
 const stateProduct = location.state?.product;
 

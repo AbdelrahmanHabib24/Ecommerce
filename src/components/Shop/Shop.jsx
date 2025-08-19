@@ -5,7 +5,10 @@ import ProductCard from "../ProductCard/ProductCard";
 import { FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { addToCart } from "../../reducers/cartReducer";
-import { addToWishlist, removeFromWishlist } from "../../reducers/wishlistReducer";
+import {
+  addToWishlist,
+  removeFromWishlist,
+} from "../../reducers/wishlistReducer";
 import {
   fetchProducts,
   setError,
@@ -13,6 +16,7 @@ import {
   selectLoading,
   selectError,
 } from "../../reducers/productsReducer";
+import ProductDetailsModal from "../ProductDetailsModal/ProductDetailsModal";
 
 const defaultBrands = ["hikvision", "microsoft", "team", "acer"];
 
@@ -26,7 +30,6 @@ const Shop = () => {
   const error = useSelector(selectError);
   const wishlist = useSelector((state) => state.wishlist.items || []);
   const cart = useSelector((state) => state.cart.items || []);
-  const recentlyViewed = useSelector((state) => state.recentlyViewed || []);
 
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [stockFilter, setStockFilter] = useState({
@@ -39,10 +42,11 @@ const Shop = () => {
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [sortBy, setSortBy] = useState("relevance");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const categoryParam = queryParams.get("category")?.toLowerCase() || "";
 
-  // Fetch products 
+  // Fetch products
   useEffect(() => {
     if (!allProducts?.length && !loading && !error) {
       dispatch(fetchProducts())
@@ -83,7 +87,14 @@ const Shop = () => {
         if (sortBy === "rating") return b.rating - a.rating;
         return 0;
       });
-  }, [allProducts, categoryParam, priceRange, stockFilter, brandsFilter, sortBy]);
+  }, [
+    allProducts,
+    categoryParam,
+    priceRange,
+    stockFilter,
+    brandsFilter,
+    sortBy,
+  ]);
 
   const totalItems = filteredProducts.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
@@ -93,11 +104,9 @@ const Shop = () => {
   );
 
   const handleViewDetails = (product) => {
-    dispatch({
-      type: "SET_RECENTLY_VIEWED",
-      payload: [product, ...recentlyViewed.filter((p) => p.id !== product.id)].slice(0, 10),
-    });
-  };
+  console.log("View details clicked for product:", product);
+  setSelectedProduct(product); 
+};
 
   const handleAddToCart = (product) => {
     const existing = cart.find((p) => p.id === product.id);
@@ -120,15 +129,13 @@ const Shop = () => {
 
   // Reset pagination when filters change
   useEffect(
-    () =>
-      setCurrentPage(1),
+    () => setCurrentPage(1),
     [categoryParam, priceRange, stockFilter, brandsFilter, sortBy, itemsPerPage]
   );
 
   return (
     <div className="py-6 bg-white dark:bg-gray-900 min-h-screen text-gray-900 dark:text-gray-100">
       <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-6">
-        
         {/* Sidebar Filters */}
         <div className="w-full lg:w-1/4 bg-white dark:bg-gray-800 p-6 rounded-lg">
           <h3 className="text-lg font-semibold mb-4">Filter By Price</h3>
@@ -137,9 +144,7 @@ const Shop = () => {
             min="0"
             max="1000"
             value={priceRange[0]}
-            onChange={(e) =>
-              setPriceRange([+e.target.value, priceRange[1]])
-            }
+            onChange={(e) => setPriceRange([+e.target.value, priceRange[1]])}
             className="w-full accent-blue-500 mb-2"
           />
           <input
@@ -147,9 +152,7 @@ const Shop = () => {
             min="0"
             max="1000"
             value={priceRange[1]}
-            onChange={(e) =>
-              setPriceRange([priceRange[0], +e.target.value])
-            }
+            onChange={(e) => setPriceRange([priceRange[0], +e.target.value])}
             className="w-full accent-blue-500"
           />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -296,6 +299,12 @@ const Shop = () => {
           )}
         </div>
       </div>
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 };

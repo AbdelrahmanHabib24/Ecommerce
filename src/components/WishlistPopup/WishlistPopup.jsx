@@ -10,7 +10,6 @@ import { setWishlistPopup } from "../../reducers/popupsReducer";
 const WishlistPopup = () => {
   const dispatch = useDispatch();
   const wishlist = useSelector((state) => state.wishlist.items);
-  const cart = useSelector((state) => state.cart.items);
   const isOpen = useSelector((state) => state.popups.wishlistPopup);
 
   const closePopup = () => dispatch(setWishlistPopup(false));
@@ -21,7 +20,6 @@ const WishlistPopup = () => {
   };
 
   const handleAddToCart = (item) => {
-    if (cart.some((c) => c.id === item.id)) return toast.info("Already in cart!");
     if (!item.price) return toast.error("Missing price.");
     dispatch(addToCart({ ...item, quantity: 1 }));
     toast.success("Added to cart!");
@@ -92,7 +90,7 @@ const WishlistPopup = () => {
                     >
                       <div className="flex items-center gap-3">
                         <img
-                          src={item.img || "https://via.placeholder.com/56?text=No+Image"}
+                          src={item.image }
                           alt={item.title}
                           className="w-14 h-14 object-fill rounded-md"
                           loading="lazy"

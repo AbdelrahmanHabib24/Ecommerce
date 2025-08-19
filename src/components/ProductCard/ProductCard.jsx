@@ -77,7 +77,7 @@ const ProductCard = ({
               <div className="relative">
                 <Link to={`/product/${id}`} state={{ product: p }}>
                   <img
-                    src={image }
+                    src={image}
                     alt={title}
                     className="w-full max-w-[180px] h-[220px] object-fill rounded-md mb-3 mx-auto"
                   />
@@ -128,22 +128,24 @@ const ProductCard = ({
                   <FaShoppingCart className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={(e) =>
-                    isInWishlist
-                      ? handleViewDetails(p)
-                      : handleToggleWishlist(p, e)
-                  }
+                  onClick={(e) => handleToggleWishlist(p, e)}
                   className={`p-2 rounded-full ${
                     isInWishlist
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      ? "bg-red-500 text-white hover:bg-red-600"
                       : "bg-gray-200 dark:bg-gray-700 text-gray-500 hover:bg-gray-300"
                   }`}
                 >
                   {isInWishlist ? (
-                    <FaEye className="w-5 h-5" />
+                    <FaRegHeart className="w-5 h-5" />
                   ) : (
                     <FaRegHeart className="w-5 h-5" />
                   )}
+                </button>
+                <button
+                  onClick={(e) => handleViewDetails(p, e)}
+                  className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200 shadow-md"
+                >
+                  <FaEye className="w-5 h-5" />
                 </button>
               </div>
             </article>

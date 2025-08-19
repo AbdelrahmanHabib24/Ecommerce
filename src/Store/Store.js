@@ -1,11 +1,7 @@
 // src/Store/Store.js
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import {
-  persistStore,
-  persistReducer,
-} from 'redux-persist';
+import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; 
-
 
 // Reducers
 import cartReducer from '../reducers/cartReducer';
@@ -21,26 +17,23 @@ export const rootReducer = combineReducers({
   cart: cartReducer,
   wishlist: wishlistReducer,
   products: productsReducer,
-  filters: filtersReducer,
+  filters: filtersReducer, 
   recentlyViewed: recentlyViewedReducer,
   popups: popupsReducer,
   categories: categoriesReducer,
 });
 
+// Persist config
 const persistConfig = {
   key: 'root',
   storage,
-  blacklist: ['products'] 
+  blacklist: ['products'], 
 };
-
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
-  
 });
 
 export const persistor = persistStore(store);
-
-

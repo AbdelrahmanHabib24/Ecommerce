@@ -1,7 +1,7 @@
 // src/reducers/productsReducer.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-const PRODUCTS_PER_PAGE = 5;
+const PRODUCTS_PER_PAGE = 4;
 const API_URL = "https://fakestoreapi.com/products";
 
 const initialState = {
@@ -17,13 +17,12 @@ const initialState = {
   totalProducts: 0,
 };
 
-// Helper function: paginate products
 const paginate = (all, page, perPage) => {
   const offset = (page - 1) * perPage;
   return all.slice(offset, offset + perPage);
 };
 
-// Thunk to fetch all products
+//  fetch all products
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
   async ({ signal } = {}, { rejectWithValue }) => {
@@ -120,7 +119,6 @@ const productsSlice = createSlice({
   },
 });
 
-// Export actions
 export const {
   setSelectedProduct,
   setProductModalOpen,

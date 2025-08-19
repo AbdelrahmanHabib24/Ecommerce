@@ -101,32 +101,5 @@ export const selectRatingFilter = (state) => state.filters.ratingFilter;
 export const selectSortBy = (state) => state.filters.sortBy;
 export const selectResetConfirmation = (state) => state.filters.resetConfirmation;
 
-export const persistFiltersMiddleware = (store) => (next) => (action) => {
-  const result = next(action);
-  const state = store.getState().filters;
-  localStorage.setItem(
-    'productFilters',
-    JSON.stringify({
-      categoryFilter: state.categoryFilter,
-      priceRange: state.priceRange,
-      ratingFilter: state.ratingFilter,
-      sortBy: state.sortBy,
-    })
-  );
-  return result;
-};
 
-export const loadPersistedFilters = () => {
-  const persisted = localStorage.getItem('productFilters');
-  if (persisted) {
-    const parsed = JSON.parse(persisted);
-    return {
-      categoryFilter: parsed.categoryFilter || initialState.categoryFilter,
-      priceRange: validatePriceRange(parsed.priceRange || initialState.priceRange),
-      ratingFilter: validateRatingFilter(parsed.ratingFilter || initialState.ratingFilter),
-      sortBy: parsed.sortBy || initialState.sortBy,
-      resetConfirmation: initialState.resetConfirmation,
-    };
-  }
-  return initialState;
-};
+

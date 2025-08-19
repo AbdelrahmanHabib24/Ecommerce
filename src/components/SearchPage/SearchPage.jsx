@@ -21,6 +21,7 @@ import {
 
 import { addToCart, updateCartQuantity } from "../../reducers/cartReducer";
 import { addToWishlist, removeFromWishlist } from "../../reducers/wishlistReducer";
+import ProductDetailsModal from "../ProductDetailsModal/ProductDetailsModal";
 
 const SearchPage = () => {
   const dispatch = useDispatch();
@@ -36,6 +37,8 @@ const SearchPage = () => {
   // Local filters
   const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState([0, Infinity]);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+
   const [stockFilter, setStockFilter] = useState("all");
   const [brandsFilter, setBrandsFilter] = useState([]);
   const [sortBy, setSortBy] = useState("");
@@ -124,6 +127,9 @@ const SearchPage = () => {
     [dispatch, wishlistItems]
   );
 
+const handleViewDetails = (product) => {
+  setSelectedProduct(product); 
+};
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4" data-aos="fade-right">
@@ -153,7 +159,7 @@ const SearchPage = () => {
             wishlist={wishlistItems}
             onAddToCart={handleAddToCart}
             onToggleWishlist={handleToggleWishlist}
-            onViewDetails={() => {}}
+            onViewDetails={handleViewDetails} // does nothing
           />
         </div>
       )}
@@ -168,7 +174,14 @@ const SearchPage = () => {
           onClose={() => setShowWishlistPopup(false)}
         />
       )}
+       {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
+    
   );
 };
 

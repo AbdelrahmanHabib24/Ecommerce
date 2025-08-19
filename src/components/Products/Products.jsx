@@ -50,8 +50,7 @@ const Products = () => {
   // Fetch products on mount
   useEffect(() => {
     if (!allProducts?.length && !loading && !error) {
-      dispatch(fetchProducts())
-        
+      dispatch(fetchProducts());
     }
   }, [allProducts, loading, error, dispatch]);
 
@@ -97,12 +96,15 @@ const Products = () => {
   );
 
   const handleToggleWishlist = useCallback(
-    (product) => {
-      const exists = wishlistItems.some((item) => item.id === product.id);
-      dispatch(
-        exists ? removeFromWishlist(product.id) : addToWishlist(product)
-      );
-      toast.info(exists ? "Removed from wishlist!" : "Added to wishlist!");
+    (allProducts) => {
+      const exists = wishlistItems.some((item) => item.id === allProducts.id);
+      if (exists) {
+        dispatch(removeFromWishlist(allProducts.id));
+        toast.info("Removed from wishlist!");
+      } else {
+        dispatch(addToWishlist({ ...allProducts })); 
+        toast.success("Added to wishlist!");
+      }
       setShowWishlistPopup(true);
     },
     [dispatch, wishlistItems]
