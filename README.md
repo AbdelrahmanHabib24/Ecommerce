@@ -1,8 +1,15 @@
-
 # 🛍️ Ecommerce Web App
 
 A modern **Ecommerce Web Application** built with **React, Redux, TailwindCSS, and Redux-Persist**.  
-This project provides a smooth shopping experience with animations, dark mode, and PDF invoice export.
+This project provides a smooth shopping experience with animations, dark mode, email notifications, and PDF invoice export.
+
+---
+
+## 🌐 Live Demo  
+
+🔗 [Ecommerce Web App Demo](https://ecommerce128.netlify.app/)  
+
+![App Screenshot](./Screenshot.png)  
 
 ---
 
@@ -14,25 +21,24 @@ This project provides a smooth shopping experience with animations, dark mode, a
 - ✅ **Dark Mode Support**.  
 - ✅ **Fully Responsive Design** with TailwindCSS.  
 - ✅ **Smooth Animations** with Framer Motion + AOS.  
-- ✅ **🧾 Export Invoices as PDF** with `jsPDF` (download full order details).  
-- ✅ **Email Notifications**   Order confirmation email via EmailJS.
+- ✅ **Export Invoices as PDF**  with `jsPDF` (download full order details).  
+- ✅ **Email Notifications** – Order confirmation email via **EmailJS**.  
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **React** – Frontend library  
-- **Redux Toolkit + Redux-Persist** – State management & persistence
-- **TailwindCSS** – Styling & responsive design  
-- **Framer Motion** – Smooth animations  
-- **AOS** – Animate on Scroll  
-- **jsPDF** – Export invoices as PDF  
-- **EmailJS** – Send order confirmation emails
+- ⚛ **React + Vite** – Fast frontend development  
+- 📦 **Redux Toolkit + Redux-Persist** – State management & persistence  
+- 🎨 **TailwindCSS** – Styling & responsive design  
+- 🎬 **Framer Motion** – Smooth animations  
+- ✨ **AOS** – Animate on Scroll  
+- 📄 **jsPDF** – Export invoices as PDF  
+- 📧 **EmailJS** – Send order confirmation emails  
 
 ---
 
-
-## ⚙️ Installation
+## ⚙️ Installation & Setup
 
 Clone the repository:
 
