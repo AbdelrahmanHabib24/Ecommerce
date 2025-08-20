@@ -5,14 +5,6 @@ This project provides a smooth shopping experience with animations, dark mode, e
 
 ---
 
-## 🌐 Live Demo  
-
-🔗 [Ecommerce Web App Demo](https://ecommerce128.netlify.app/)  
-
-![App Screenshot](./Screenshot.png)  
-
----
-
 ## 🚀 Features
 
 - ✅ **Fetch & Display Products** from external API.  
@@ -35,6 +27,12 @@ This project provides a smooth shopping experience with animations, dark mode, e
 - ✨ **AOS** – Animate on Scroll  
 - 📄 **jsPDF** – Export invoices as PDF  
 - 📧 **EmailJS** – Send order confirmation emails  
+
+---
+
+## 🌐 Live Demo  
+
+🔗 [Ecommerce Web App Demo](https://ecommerce128.netlify.app/)  
 
 ---
 
